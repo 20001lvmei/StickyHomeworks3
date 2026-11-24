@@ -368,14 +368,8 @@ public partial class MainWindow : Window
 
     private void MainWindow_OnClosing(object? sender, CancelEventArgs e)
     {
-        if (!ViewModel.IsClosing)
-        {
-            e.Cancel = true;
-            return;
-        }
-
+        // 不再拦截关闭：Alt+F4 / 任务管理器关闭时直接退出并落盘
         SavePos();
-        // 退出前立即落盘，避免防抖中的保存被进程结束吞掉
         SettingsService.Flush();
         ProfileService.Flush();
     }
@@ -700,6 +694,53 @@ public partial class MainWindow : Window
     private void MenuItemRecoverExpiredHomework_OnClick(object sender, RoutedEventArgs e)
     {
         RestoreArchivedHomework();
+    }
+
+    /// <summary>
+    /// 打开时间机器：列出自动备份，选择一个恢复。
+    /// </summary>
+    private async void MenuItemTimeMachine_OnClick(object sender, RoutedEventArgs e)
+    {
+        PopupExAdvanced.IsOpen = false;
+
+        ViewModel.Backups.Clear();
+        foreach (var entry in AppStorage.ListBackups("Profile.json").Select(BackupEntry.FromFile))
+        {
+            ViewModel.Backups.Add(entry);
+        }
+
+        if (ViewModel.Backups.Count == 0)
+        {
+            ViewModel.SnackbarMessageQueue.Enqueue("暂时还没有备份，应用会在保存作业时自动创建。");
+            return;
+        }
+
+        ViewModel.SelectedBackup = ViewModel.Backups.First();
+        await DialogHost.Show(FindResource("TimeMachineDialog"), "MainWindow");
+    }
+
+    private void ButtonRestoreBackup_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel.SelectedBackup is not { } entry)
+        {
+            ViewModel.SnackbarMessageQueue.Enqueue("请先选择一份备份。");
+            return;
+        }
+
+        try
+        {
+            AppStorage.RestoreBackup(entry.Path, "Profile.json");
+            ProfileService.Reload();
+            RemoveEmptyHomeworks();
+            UpdateArchivedHomeworkState();
+            DialogHost.Close("MainWindow");
+            ViewModel.SnackbarMessageQueue.Enqueue($"已恢复到 {entry.TimeText} 的备份。");
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[TimeMachine] 恢复失败：{ex}");
+            ViewModel.SnackbarMessageQueue.Enqueue($"恢复失败：{ex.Message}");
+        }
     }
 
     private void MainWindow_OnDragOver(object sender, DragEventArgs e)

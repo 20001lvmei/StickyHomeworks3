@@ -169,6 +169,7 @@ public static class AppStorage
                 EnsureDataDirectory();
                 File.Copy(legacy, target, false);
                 Debug.WriteLine($"[AppStorage] 已迁移数据文件：{legacy} -> {target}");
+                MigrateLegacyBackups(legacy);
                 return;
             }
             catch (Exception ex)
@@ -465,6 +466,53 @@ public static class AppStorage
         {
             EnsureDataDirectory();
             File.Copy(backupPath, target, true);
+        }
+    }
+
+    /// <summary>
+    /// 旧版本（v2）的自动备份放在它自己的 backups 目录里，这里一并导入到时间机器。
+    /// </summary>
+    private static void MigrateLegacyBackups(string legacyProfilePath)
+    {
+        try
+        {
+            var legacyDirectory = Path.GetDirectoryName(legacyProfilePath);
+            if (string.IsNullOrEmpty(legacyDirectory))
+            {
+                return;
+            }
+
+            var legacyBackups = Path.Combine(legacyDirectory, "backups");
+            if (!Directory.Exists(legacyBackups))
+            {
+                return;
+            }
+
+            var target = Path.Combine(DataDirectory, "backups");
+            Directory.CreateDirectory(target);
+
+            foreach (var file in Directory.GetFiles(legacyBackups, "*.json"))
+            {
+                var name = Path.GetFileName(file);
+                if (name.Equals("backup_index.json", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                // 统一成 Profile_<时间>.json 的命名，时间机器才能识别
+                var stamp = File.GetLastWriteTime(file).ToString("yyyyMMdd_HHmmss");
+                var targetFile = Path.Combine(target, $"Profile_{stamp}.json");
+                if (!File.Exists(targetFile))
+                {
+                    File.Copy(file, targetFile, false);
+                }
+            }
+
+            Debug.WriteLine($"[AppStorage] 已导入旧版备份目录：{legacyBackups}");
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[AppStorage] 导入旧版备份失败：{ex.Message}");
         }
     }
 

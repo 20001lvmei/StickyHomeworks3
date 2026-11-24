@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.Windows.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
 using MaterialDesignThemes.Wpf;
@@ -24,6 +25,8 @@ public class MainViewModel : ObservableRecipient
     private bool _isUpdatingHomeworkSubject = false;
     private List<Homework> _archivedHomeworks = new();
     private bool _hasArchivedHomeworks = false;
+    private ObservableCollection<BackupEntry> _backups = new();
+    private BackupEntry? _selectedBackup;
 
     public Control? SelectedListBoxItem
     {
@@ -181,6 +184,31 @@ public class MainViewModel : ObservableRecipient
         {
             if (value == _hasArchivedHomeworks) return;
             _hasArchivedHomeworks = value;
+            OnPropertyChanged();
+        }
+    }
+
+    /// <summary>
+    /// 时间机器里的备份列表。
+    /// </summary>
+    public ObservableCollection<BackupEntry> Backups
+    {
+        get => _backups;
+        set
+        {
+            if (Equals(value, _backups)) return;
+            _backups = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public BackupEntry? SelectedBackup
+    {
+        get => _selectedBackup;
+        set
+        {
+            if (Equals(value, _selectedBackup)) return;
+            _selectedBackup = value;
             OnPropertyChanged();
         }
     }

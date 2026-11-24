@@ -77,6 +77,19 @@ public class ProfileService : IHostedService, INotifyPropertyChanged
     }
 
     /// <summary>
+    /// 从磁盘重新读取作业数据（时间机器恢复后使用）。
+    /// </summary>
+    public void Reload()
+    {
+        var loaded = AppStorage.Load<Profile>(ProfileFileName);
+        if (loaded != null)
+        {
+            Profile = loaded;
+            OnPropertyChanged(nameof(Profile));
+        }
+    }
+
+    /// <summary>
     /// 把已经过期的作业移动到归档中，返回被归档的作业。
     /// 与旧版本直接删除不同，归档的作业会随 Profile 一起保存，重启后依然可以恢复。
     /// </summary>

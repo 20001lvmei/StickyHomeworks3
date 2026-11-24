@@ -104,7 +104,7 @@
                 </ListView.ItemTemplate>
                 <models:ContributionMember
                     AvatarImage="/Assets/Contributiors/20001lvmei@64w.png"
-                    Name="20001lvmei" Description="当前维护者" />
+                    Name="20001lvmei" Description="分支版本维护" />
                 <models:ContributionMember
                     AvatarImage="/Assets/Contributiors/HelloWRC@64w.jpg"
                     Name="HelloWRC" Description="StickyHomeworks 原作者" />
@@ -717,7 +717,7 @@
                                         </Paragraph>
                                         <Paragraph>
                                             本应用基于 <Hyperlink NavigateUri="https://github.com/HelloWRC/StickyHomeworks"
-                                                                  RequestNavigate="Hyperlink_OnRequestNavigate">HelloWRC/StickyHomeworks</Hyperlink>（GPLv3）修改；现由 20001lvmei 维护，DeepSeek 参与代码修复与功能实现。
+                                                                  RequestNavigate="Hyperlink_OnRequestNavigate">HelloWRC/StickyHomeworks</Hyperlink>（GPLv3）修改；本分支版本由 20001lvmei 维护，DeepSeek 参与代码修复与功能实现。
                                         </Paragraph>
 
                                     </FlowDocument>

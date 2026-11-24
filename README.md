@@ -7,7 +7,7 @@ StickyHomeworks3 是一款支持富文本的桌面作业贴工具。
 
 ![主界面](docs/screenshot.png)
 
-> 本项目基于 [HelloWRC/StickyHomeworks](https://github.com/HelloWRC/StickyHomeworks) 修改而来，遵循 GPLv3 许可。
+> 本项目是基于 [HelloWRC/StickyHomeworks](https://github.com/HelloWRC/StickyHomeworks) 的**分支版本**，由 20001lvmei 维护，遵循 GPLv3 许可。
 
 ## 功能
 

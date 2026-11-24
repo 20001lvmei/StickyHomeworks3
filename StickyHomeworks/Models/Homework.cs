@@ -1,4 +1,6 @@
 using System.Collections.ObjectModel;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace StickyHomeworks.Models;
@@ -69,4 +71,11 @@ public class Homework : ObservableRecipient
             OnPropertyChanged();
         }
     }
+
+    /// <summary>
+    /// 保留旧版本作业里本版本还不认识的字段（例如 IsExpired、FirstExpiredShowTime），
+    /// 保存时原样写回，避免旧版本再打开时丢数据。
+    /// </summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? ExtraData { get; set; }
 }

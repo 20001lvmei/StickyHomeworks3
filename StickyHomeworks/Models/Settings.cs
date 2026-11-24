@@ -3,6 +3,7 @@ using MaterialDesignColors;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Windows.Media;
 using Microsoft.Win32;
@@ -483,6 +484,13 @@ public class Settings : ObservableRecipient
             OnPropertyChanged();
         }
     }
+
+    /// <summary>
+    /// 保留旧版本配置里本版本还不认识的字段（例如 ClassIsland 联动、标题颜色等），
+    /// 保存时原样写回，避免新版本把旧配置“吞掉”。
+    /// </summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? ExtraData { get; set; }
 
     /// <summary>
     /// 修正历史配置里的非法值。旧版本会把主题色的透明度写成 0（完全透明），

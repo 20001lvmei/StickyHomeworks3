@@ -23,6 +23,8 @@ public partial class App : AppEx
 {
     private static Mutex? Mutex;
 
+    private static TrayService? _tray;
+
     /// <summary>
     /// 用于让“再次启动”的实例通知已运行的实例把窗口显示到最前。
     /// </summary>
@@ -104,7 +106,33 @@ public partial class App : AppEx
         MainWindow = GetService<MainWindow>();
         GetService<MainWindow>().Show();
         StartShowWindowListener();
+        StartTrayIcon();
         base.OnStartup(e);
+    }
+
+    /// <summary>
+    /// 创建右下角托盘图标。
+    /// </summary>
+    private void StartTrayIcon()
+    {
+        if (MainWindow is not MainWindow window)
+        {
+            return;
+        }
+
+        try
+        {
+            _tray = new TrayService(
+                showWindow: () => Dispatcher.Invoke(() => window.ShowWindowFromTray()),
+                toggleWindow: () => Dispatcher.Invoke(() => window.HideWindowFromTray()),
+                openSettings: () => Dispatcher.Invoke(() => window.OpenSettingsFromTray()),
+                openTimeMachine: () => Dispatcher.Invoke(() => _ = window.OpenTimeMachineAsync()),
+                exit: () => Dispatcher.Invoke(() => window.ExitFromTray()));
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[App] 创建托盘图标失败：{ex.Message}");
+        }
     }
 
     /// <summary>
@@ -193,6 +221,15 @@ public partial class App : AppEx
 
     protected override void OnExit(ExitEventArgs e)
     {
+        try
+        {
+            _tray?.Dispose();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[App] 释放托盘图标失败：{ex.Message}");
+        }
+
         FlushStorage();
         base.OnExit(e);
     }

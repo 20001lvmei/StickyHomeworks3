@@ -722,7 +722,14 @@ public partial class MainWindow : Window
     private async void MenuItemTimeMachine_OnClick(object sender, RoutedEventArgs e)
     {
         PopupExAdvanced.IsOpen = false;
+        await OpenTimeMachineAsync();
+    }
 
+    /// <summary>
+    /// 打开“时间机器”对话框（托盘菜单也会调用）。
+    /// </summary>
+    public async Task OpenTimeMachineAsync()
+    {
         ViewModel.Backups.Clear();
         foreach (var entry in AppStorage.ListBackups("Profile.json").Select(BackupEntry.FromFile))
         {
@@ -737,6 +744,34 @@ public partial class MainWindow : Window
 
         ViewModel.SelectedBackup = ViewModel.Backups.First();
         await DialogHost.Show(FindResource("TimeMachineDialog"), "MainWindow");
+    }
+
+    /// <summary>
+    /// 托盘菜单：显示窗口。
+    /// </summary>
+    public void ShowWindowFromTray() => ShowFromBackground();
+
+    /// <summary>
+    /// 托盘菜单：隐藏窗口。
+    /// </summary>
+    public void HideWindowFromTray()
+    {
+        ExitEditingMode();
+        Hide();
+    }
+
+    /// <summary>
+    /// 托盘菜单：打开设置。
+    /// </summary>
+    public void OpenSettingsFromTray() => OpenSettingsWindow();
+
+    /// <summary>
+    /// 托盘菜单：退出程序。
+    /// </summary>
+    public void ExitFromTray()
+    {
+        ViewModel.IsClosing = true;
+        Close();
     }
 
     private void ButtonRestoreBackup_OnClick(object sender, RoutedEventArgs e)

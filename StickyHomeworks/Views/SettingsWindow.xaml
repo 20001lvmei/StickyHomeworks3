@@ -598,9 +598,8 @@
                                         <!-- icon -->
                                         <materialDesign:Ripple Grid.Column="0" VerticalAlignment="Top"
                                                                MouseDown="AppIcon_OnMouseDown">
-                                            <!-- TODO: 应用图标 -->
-                                            <!--<Image Source="/Assets/AppLogo.ico" Width="40"
-                                                   Height="40" VerticalAlignment="Top" />-->
+                                            <Image Source="/Assets/AppLogo.png" Width="48" Height="48"
+                                                   VerticalAlignment="Top" />
                                         </materialDesign:Ripple>
                                         <!-- about -->
                                         <StackPanel Grid.Column="1" Margin="10 0 0 0">

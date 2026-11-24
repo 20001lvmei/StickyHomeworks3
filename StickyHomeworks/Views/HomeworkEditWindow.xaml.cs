@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -16,6 +16,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using ElysiaFramework;
+using StickyHomeworks.Models;
 using StickyHomeworks.Services;
 using StickyHomeworks.ViewModels;
 
@@ -203,6 +204,59 @@ public partial class HomeworkEditWindow : Window, INotifyPropertyChanged
     private void ButtonFontSizeIncrease_OnClick(object sender, RoutedEventArgs e)
     {
         ViewModel.FontSize += 2;
+    }
+
+    private void ButtonTemplates_OnClick(object sender, RoutedEventArgs e)
+    {
+        var templates = SettingsService.Settings.Templates;
+        if (templates.Count == 0)
+        {
+            MessageBox.Show("还没有模板，可以先写好一条作业再点旁边的「存为模板」。", "套用模板",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var menu = new ContextMenu();
+        foreach (var template in templates)
+        {
+            var item = new MenuItem { Header = template.Name };
+            item.Click += (_, _) => ApplyTemplate(template);
+            menu.Items.Add(item);
+        }
+
+        menu.PlacementTarget = sender as UIElement;
+        menu.IsOpen = true;
+    }
+
+    private void ApplyTemplate(HomeworkTemplate template)
+    {
+        var homework = MainWindow.ViewModel.SelectedHomework ?? MainWindow.ViewModel.EditingHomework;
+        homework.Content = template.Content;
+    }
+
+    private void ButtonSaveAsTemplate_OnClick(object sender, RoutedEventArgs e)
+    {
+        var homework = MainWindow.ViewModel.SelectedHomework ?? MainWindow.ViewModel.EditingHomework;
+        if (string.IsNullOrWhiteSpace(RichTextBoxHelper.GetPlainText(homework.Content)))
+        {
+            MessageBox.Show("当前作业还是空的，先写点内容再存模板吧。", "存为模板",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var name = TextPromptWindow.Show(this, "存为模板", "给这个模板起个名字：",
+            $"模板 {SettingsService.Settings.Templates.Count + 1}");
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return;
+        }
+
+        SettingsService.Settings.Templates.Add(new HomeworkTemplate
+        {
+            Name = name.Trim(),
+            Content = homework.Content
+        });
+        SettingsService.SaveSettings();
     }
 
     private void ButtonEditingDone_OnClick(object sender, RoutedEventArgs e)

@@ -30,6 +30,8 @@ public class Settings : ObservableRecipient
     private double _scale = 1.5;
     private ObservableCollection<string> _subjects = new();
     private ObservableCollection<string> _tags = new();
+    private ObservableCollection<HomeworkTemplate> _templates = new();
+    private bool _isFirstRunCompleted = false;
     private bool _isDebugOptionsEnabled = false;
     private double _windowX = 0;
     private double _windowY = 0;
@@ -345,6 +347,34 @@ public class Settings : ObservableRecipient
         {
             if (Equals(value, _tags)) return;
             _tags = value;
+            OnPropertyChanged();
+        }
+    }
+
+    /// <summary>
+    /// 作业模板。
+    /// </summary>
+    public ObservableCollection<HomeworkTemplate> Templates
+    {
+        get => _templates;
+        set
+        {
+            if (Equals(value, _templates)) return;
+            _templates = value;
+            OnPropertyChanged();
+        }
+    }
+
+    /// <summary>
+    /// 是否已完成首次启动引导（OOBE）。
+    /// </summary>
+    public bool IsFirstRunCompleted
+    {
+        get => _isFirstRunCompleted;
+        set
+        {
+            if (value == _isFirstRunCompleted) return;
+            _isFirstRunCompleted = value;
             OnPropertyChanged();
         }
     }

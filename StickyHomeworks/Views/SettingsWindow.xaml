@@ -581,6 +581,53 @@
                         </Grid>
                     </TabItem>
 
+                    <!-- 模板 -->
+                    <TabItem Header="模板">
+                        <Grid Margin="12" MaxWidth="750">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition />
+                            </Grid.RowDefinitions>
+                            <DockPanel Grid.Row="0" Margin="0 0 0 8">
+                                <Button DockPanel.Dock="Right" Click="ButtonAddTemplate_OnClick"
+                                        Style="{StaticResource MaterialDesignFlatButton}">
+                                    <ely:IconText Kind="Add" Text="新建模板" />
+                                </Button>
+                                <TextBlock Text="作业模板" VerticalAlignment="Center" />
+                            </DockPanel>
+                            <ListBox Grid.Row="1" ItemsSource="{Binding Settings.Templates}"
+                                     SelectionMode="Single"
+                                     HorizontalContentAlignment="Stretch"
+                                     SelectedIndex="{Binding ViewModel.TemplateSelectedIndex}">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0 4">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Name}" FontWeight="Medium" />
+                                                <TextBlock Text="{Binding Preview}" Opacity="0.6" FontSize="12"
+                                                           TextTrimming="CharacterEllipsis" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center"
+                                                        Visibility="{Binding IsSelected, RelativeSource={RelativeSource FindAncestor, AncestorType=ListBoxItem}, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                <Button Content="{materialDesign:PackIcon PencilOutline, Size=16}"
+                                                        Style="{StaticResource MaterialDesignToolForegroundButton}"
+                                                        Margin="0 -8" ToolTip="编辑" Click="ButtonEditTemplate_OnClick" />
+                                                <Button Content="{materialDesign:PackIcon DeleteOutline, Size=16}"
+                                                        Style="{StaticResource MaterialDesignToolForegroundButton}"
+                                                        Margin="0 -8" ToolTip="删除" Foreground="IndianRed"
+                                                        Click="ButtonDeleteTemplate_OnClick" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Grid>
+                    </TabItem>
+
                     <!-- 关于 -->
                     <TabItem Header="关于">
                         <ScrollViewer>

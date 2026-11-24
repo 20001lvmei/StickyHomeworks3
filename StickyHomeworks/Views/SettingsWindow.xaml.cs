@@ -118,6 +118,61 @@ public partial class SettingsWindow : MyWindow
         OpenUrl("https://github.com/20001lvmei/StickyHomeworks3/issues");
     }
 
+    private void ButtonAddTemplate_OnClick(object sender, RoutedEventArgs e)
+    {
+        var mainWindow = AppEx.GetService<MainWindow>();
+        var selected = mainWindow.ViewModel.SelectedHomework;
+        if (selected == null || string.IsNullOrWhiteSpace(RichTextBoxHelper.GetPlainText(selected.Content)))
+        {
+            MessageBox.Show("请先在主界面选中一条作业，模板会保存这条作业的内容。", "新建模板",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var name = TextPromptWindow.Show(this, "新建模板", "给这个模板起个名字：", $"模板 {Settings.Templates.Count + 1}");
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return;
+        }
+
+        Settings.Templates.Add(new HomeworkTemplate
+        {
+            Name = name.Trim(),
+            Content = selected.Content
+        });
+        AppEx.GetService<SettingsService>().SaveSettings();
+        ViewModel.TemplateSelectedIndex = Settings.Templates.Count - 1;
+    }
+
+    private void ButtonEditTemplate_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel.TemplateSelectedIndex < 0 || ViewModel.TemplateSelectedIndex >= Settings.Templates.Count)
+        {
+            return;
+        }
+
+        var template = Settings.Templates[ViewModel.TemplateSelectedIndex];
+        var name = TextPromptWindow.Show(this, "重命名模板", "模板名称：", template.Name);
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return;
+        }
+
+        template.Name = name.Trim();
+        AppEx.GetService<SettingsService>().SaveSettings();
+    }
+
+    private void ButtonDeleteTemplate_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel.TemplateSelectedIndex < 0 || ViewModel.TemplateSelectedIndex >= Settings.Templates.Count)
+        {
+            return;
+        }
+
+        Settings.Templates.RemoveAt(ViewModel.TemplateSelectedIndex);
+        AppEx.GetService<SettingsService>().SaveSettings();
+    }
+
     private void ButtonRestoreTheme_OnClick(object sender, RoutedEventArgs e)
     {
         Settings.ResetThemeToBlue();

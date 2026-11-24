@@ -1,48 +1,111 @@
 using System.Diagnostics;
 using System.Drawing;
+using System.Drawing.Text;
 using System.Windows.Forms;
 
 namespace StickyHomeworks.Services;
 
 /// <summary>
-/// 右下角任务栏通知区域（托盘）图标。桌面作业贴这类常驻程序放托盘更合适，
-/// 而不是占据左侧任务栏按钮。
+/// 右下角任务栏通知区域（托盘）图标，菜单与旧版保持一致：
+/// 显示主界面（带勾选）/ 设置… / 重启 / 退出。
 /// </summary>
 public sealed class TrayService : IDisposable
 {
     private readonly NotifyIcon _notifyIcon;
 
-    public TrayService(Action showWindow, Action toggleWindow, Action openSettings, Action openTimeMachine, Action exit)
+    public TrayService(Func<bool> isWindowVisible, Action toggleWindow, Action openSettings, Action restart, Action exit)
     {
         _notifyIcon = new NotifyIcon
         {
             Text = "StickyHomeworks3",
-            Icon = LoadIcon(),
+            Icon = LoadAppIcon(),
             Visible = true
         };
 
-        var menu = new ContextMenuStrip();
-        menu.Items.Add("显示窗口", null, (_, _) => showWindow());
-        menu.Items.Add("隐藏窗口", null, (_, _) => toggleWindow());
+        var menu = new ContextMenuStrip { ShowImageMargin = true };
+
+        // 顶部标题（应用名 + 图标）
+        var header = new ToolStripLabel("StickyHomeworks3")
+        {
+            Image = LoadAppIconBitmap(),
+            Font = new Font(menu.Font, System.Drawing.FontStyle.Bold),
+            Margin = new Padding(4, 4, 4, 2),
+            ImageScaling = ToolStripItemImageScaling.None
+        };
+        menu.Items.Add(header);
+
+        // 显示主界面（勾选表示当前可见）
+        var showItem = new ToolStripMenuItem("显示主界面", GlyphIcon("\uE7C4"))
+        {
+            CheckOnClick = false
+        };
+        showItem.Click += (_, _) => toggleWindow();
+        menu.Items.Add(showItem);
+
         menu.Items.Add(new ToolStripSeparator());
-        menu.Items.Add("时间机器…", null, (_, _) => openTimeMachine());
-        menu.Items.Add("设置…", null, (_, _) => openSettings());
+
+        var settingsItem = new ToolStripMenuItem("设置...", GlyphIcon("\uE713"));
+        settingsItem.Click += (_, _) => openSettings();
+        menu.Items.Add(settingsItem);
+
         menu.Items.Add(new ToolStripSeparator());
-        menu.Items.Add("退出", null, (_, _) => exit());
+
+        var restartItem = new ToolStripMenuItem("重启", GlyphIcon("\uE72C"));
+        restartItem.Click += (_, _) => restart();
+        menu.Items.Add(restartItem);
+
+        var exitItem = new ToolStripMenuItem("退出", GlyphIcon("\uE7E8"));
+        exitItem.Click += (_, _) => exit();
+        menu.Items.Add(exitItem);
+
+        menu.Opening += (_, _) =>
+        {
+            try
+            {
+                showItem.Checked = isWindowVisible();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[Tray] 更新菜单状态失败：{ex.Message}");
+            }
+        };
 
         _notifyIcon.ContextMenuStrip = menu;
 
-        // 左键单击/双击都只负责“把窗口叫出来”，不切换，避免双击导致忽隐忽现
+        // 左键单击：把窗口叫出来
         _notifyIcon.MouseClick += (_, e) =>
         {
             if (e.Button == MouseButtons.Left)
             {
-                showWindow();
+                toggleWindow();
             }
         };
     }
 
-    private static Icon LoadIcon()
+    /// <summary>
+    /// 用 Segoe MDL2 Assets 字形画一个 16×16 菜单图标。
+    /// </summary>
+    private static Image? GlyphIcon(string glyph)
+    {
+        try
+        {
+            var bitmap = new Bitmap(16, 16);
+            using var graphics = Graphics.FromImage(bitmap);
+            graphics.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
+            graphics.Clear(Color.Transparent);
+            using var font = new Font("Segoe MDL2 Assets", 10f, System.Drawing.FontStyle.Regular, GraphicsUnit.Pixel);
+            using var brush = new SolidBrush(Color.FromArgb(90, 90, 90));
+            graphics.DrawString(glyph, font, brush, new PointF(0, 0));
+            return bitmap;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[Tray] 生成菜单图标失败：{ex.Message}");
+            return null;
+        }
+    }
+
+    private static Icon LoadAppIcon()
     {
         try
         {
@@ -62,6 +125,20 @@ public sealed class TrayService : IDisposable
         }
 
         return SystemIcons.Application;
+    }
+
+    private static Image? LoadAppIconBitmap()
+    {
+        try
+        {
+            using var icon = LoadAppIcon();
+            return icon.ToBitmap();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[Tray] 转换程序图标失败：{ex.Message}");
+            return null;
+        }
     }
 
     public void ShowBalloon(string title, string text)

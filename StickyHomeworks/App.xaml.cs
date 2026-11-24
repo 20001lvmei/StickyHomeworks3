@@ -103,6 +103,14 @@ public partial class App : AppEx
             }).
             Build();
         _ = Host.StartAsync();
+        // 首次启动：先走一遍引导（选科目、是否开机自启）
+        var settingsService = GetService<SettingsService>();
+        if (!settingsService.Settings.IsFirstRunCompleted)
+        {
+            var oobe = new OobeWindow(settingsService);
+            oobe.ShowDialog();
+        }
+
         MainWindow = GetService<MainWindow>();
         GetService<MainWindow>().Show();
         StartShowWindowListener();
@@ -123,10 +131,10 @@ public partial class App : AppEx
         try
         {
             _tray = new TrayService(
-                showWindow: () => Dispatcher.Invoke(() => window.ShowWindowFromTray()),
-                toggleWindow: () => Dispatcher.Invoke(() => window.HideWindowFromTray()),
+                isWindowVisible: () => window.IsVisible,
+                toggleWindow: () => Dispatcher.Invoke(() => window.ToggleWindowFromTray()),
                 openSettings: () => Dispatcher.Invoke(() => window.OpenSettingsFromTray()),
-                openTimeMachine: () => Dispatcher.Invoke(() => _ = window.OpenTimeMachineAsync()),
+                restart: () => Dispatcher.Invoke(() => window.RestartFromTray()),
                 exit: () => Dispatcher.Invoke(() => window.ExitFromTray()));
         }
         catch (Exception ex)

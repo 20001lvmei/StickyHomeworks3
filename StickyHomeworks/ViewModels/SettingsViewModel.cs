@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace StickyHomeworks.ViewModels;
 
@@ -12,6 +12,7 @@ public class SettingsViewModel : ObservableRecipient
     private int _subjectSelectedIndex = -1;
     private string _tagEditText = "";
     private int _tagSelectedIndex = -1;
+    private int _templateSelectedIndex = -1;
     private string _debugRichTextBoxContent = "";
 
     public int AppIconClickCount
@@ -98,6 +99,17 @@ public class SettingsViewModel : ObservableRecipient
         {
             if (value == _tagSelectedIndex) return;
             _tagSelectedIndex = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public int TemplateSelectedIndex
+    {
+        get => _templateSelectedIndex;
+        set
+        {
+            if (value == _templateSelectedIndex) return;
+            _templateSelectedIndex = value;
             OnPropertyChanged();
         }
     }

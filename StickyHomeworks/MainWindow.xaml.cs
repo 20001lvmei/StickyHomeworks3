@@ -752,6 +752,46 @@ public partial class MainWindow : Window
     public void ShowWindowFromTray() => ShowFromBackground();
 
     /// <summary>
+    /// 托盘菜单：显示/隐藏窗口。
+    /// </summary>
+    public void ToggleWindowFromTray()
+    {
+        if (IsVisible && WindowState != WindowState.Minimized)
+        {
+            ExitEditingMode();
+            Hide();
+        }
+        else
+        {
+            ShowFromBackground();
+        }
+    }
+
+    /// <summary>
+    /// 托盘菜单：重启程序。
+    /// </summary>
+    public void RestartFromTray()
+    {
+        try
+        {
+            App.ReleaseLock();
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = Environment.ProcessPath,
+                UseShellExecute = true,
+                WorkingDirectory = AppContext.BaseDirectory
+            });
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[App] 重启失败：{ex.Message}");
+        }
+
+        ViewModel.IsClosing = true;
+        Close();
+    }
+
+    /// <summary>
     /// 托盘菜单：隐藏窗口。
     /// </summary>
     public void HideWindowFromTray()

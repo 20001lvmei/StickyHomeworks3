@@ -111,6 +111,18 @@
                                     VerticalAlignment="Center"
                                     Margin="4 0"
                                     Style="{StaticResource MaterialDesignToolForegroundButton}" />
+                            <Button Content="{materialDesign:PackIcon FileDocumentOutline}"
+                                    VerticalAlignment="Center"
+                                    Margin="4 0"
+                                    ToolTip="套用模板"
+                                    Click="ButtonTemplates_OnClick"
+                                    Style="{StaticResource MaterialDesignToolForegroundButton}" />
+                            <Button Content="{materialDesign:PackIcon ContentSavePlusOutline}"
+                                    VerticalAlignment="Center"
+                                    Margin="4 0"
+                                    ToolTip="存为模板"
+                                    Click="ButtonSaveAsTemplate_OnClick"
+                                    Style="{StaticResource MaterialDesignToolForegroundButton}" />
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom">
                             <Button Content="{materialDesign:PackIcon Undo}"

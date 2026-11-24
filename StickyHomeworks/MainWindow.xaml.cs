@@ -41,6 +41,11 @@ public partial class MainWindow : Window
 
     public event EventHandler? OnHomeworkEditorUpdated;
 
+    /// <summary>
+    /// 临时浮到最前时置为 true，期间不执行“置底”。
+    /// </summary>
+    private bool _forceForeground;
+
     public MainWindow(ProfileService profileService,
                       SettingsService settingsService,
                       WindowFocusObserverService focusObserverService)
@@ -128,6 +133,60 @@ public partial class MainWindow : Window
         Top = SettingsService.Settings.WindowY / dpi;
         Width = SettingsService.Settings.WindowWidth / dpi;
         Height = SettingsService.Settings.WindowHeight / dpi;
+        ClampToScreen();
+    }
+
+    /// <summary>
+    /// 保证窗口至少有一部分在屏幕可见区域内，避免恢复配置后窗口跑到屏幕外“打不开”。
+    /// </summary>
+    private void ClampToScreen()
+    {
+        var work = SystemParameters.WorkArea;
+        if (double.IsNaN(Left) || Left < work.Left || Left > work.Right - 120)
+        {
+            Left = work.Left + 60;
+        }
+
+        if (double.IsNaN(Top) || Top < work.Top || Top > work.Bottom - 120)
+        {
+            Top = work.Top + 60;
+        }
+    }
+
+    /// <summary>
+    /// 被“再次启动”的程序唤醒时调用：把窗口显示到最前。
+    /// </summary>
+    public void ShowFromBackground()
+    {
+        if (!IsVisible)
+        {
+            Show();
+        }
+
+        if (WindowState == WindowState.Minimized)
+        {
+            WindowState = WindowState.Normal;
+        }
+
+        ClampToScreen();
+
+        // 冻结（置底）状态下也要先浮到最前，否则用户根本看不到窗口
+        _forceForeground = true;
+        var hWnd = new WindowInteropHelper(this).Handle;
+        NativeWindowHelper.SetWindowPos(hWnd, NativeWindowHelper.HWND_TOP, 0, 0, 0, 0,
+            NativeWindowHelper.SWP_NOSIZE | NativeWindowHelper.SWP_NOMOVE);
+        Topmost = true;
+        Topmost = false;
+        Activate();
+
+        var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(6) };
+        timer.Tick += (_, _) =>
+        {
+            timer.Stop();
+            _forceForeground = false;
+            SetBottom();
+        };
+        timer.Start();
     }
 
     private void SavePos()
@@ -379,7 +438,7 @@ public partial class MainWindow : Window
 
     private void SetBottom()
     {
-        if (!SettingsService.Settings.IsBottom)
+        if (!SettingsService.Settings.IsBottom || _forceForeground)
         {
             return;
         }

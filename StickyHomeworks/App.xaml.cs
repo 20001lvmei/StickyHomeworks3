@@ -8,10 +8,8 @@ using ClassIsland.Services;
 using ElysiaFramework;
 using ElysiaFramework.Interfaces;
 using ElysiaFramework.Services;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using StickyHomeworks.Core.Context;
 using StickyHomeworks.Services;
 using StickyHomeworks.Views;
 using MessageBox = System.Windows.MessageBox;
@@ -24,6 +22,13 @@ namespace StickyHomeworks;
 public partial class App : AppEx
 {
     private static Mutex? Mutex;
+
+    /// <summary>
+    /// 用于让“再次启动”的实例通知已运行的实例把窗口显示到最前。
+    /// </summary>
+    private static EventWaitHandle? ShowWindowEvent;
+
+    private const string ShowWindowEventName = "StickyHomeworks3.ShowWindow";
 
     public static string AppVersion => Assembly.GetExecutingAssembly().GetName().Version!.ToString();
 
@@ -50,9 +55,27 @@ public partial class App : AppEx
     private void StartupCore(StartupEventArgs e)
     {
         Mutex = new Mutex(true, "StickyHomeworks3.Lock", out var createNew);
+        try
+        {
+            ShowWindowEvent = new EventWaitHandle(false, EventResetMode.AutoReset, ShowWindowEventName);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[App] 创建窗口唤醒事件失败：{ex.Message}");
+        }
+
         if (!createNew)
         {
-            MessageBox.Show("应用已经在运行中，请勿重复启动第二个实例。");
+            // 已经有实例在运行：通知它把窗口显示到最前，然后自己退出
+            try
+            {
+                ShowWindowEvent?.Set();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[App] 唤醒已有实例失败：{ex.Message}");
+            }
+
             Environment.Exit(0);
         }
 
@@ -65,7 +88,6 @@ public partial class App : AppEx
             UseContentRoot(AppContext.BaseDirectory).
             ConfigureServices((context, services) =>
             {
-                services.AddDbContext<AppDbContext>();
                 services.AddSingleton<IThemeService, ThemeService>();
                 services.AddSingleton<ProfileService>();
                 services.AddSingleton<SettingsService>();
@@ -79,18 +101,49 @@ public partial class App : AppEx
             }).
             Build();
         _ = Host.StartAsync();
-        try
-        {
-            // 表情包相关的数据库现在保存在用户数据目录中，首次启动时创建表结构
-            GetService<AppDbContext>().Database.EnsureCreated();
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"[App] 初始化数据库失败：{ex.Message}");
-        }
         MainWindow = GetService<MainWindow>();
         GetService<MainWindow>().Show();
+        StartShowWindowListener();
         base.OnStartup(e);
+    }
+
+    /// <summary>
+    /// 后台等待“再次启动”的信号，收到后把主窗口显示到最前。
+    /// 这样即使窗口被冻结在桌面底层，用户再点一次 exe 也能把它叫出来。
+    /// </summary>
+    private void StartShowWindowListener()
+    {
+        if (ShowWindowEvent == null)
+        {
+            return;
+        }
+
+        var thread = new Thread(() =>
+        {
+            while (true)
+            {
+                try
+                {
+                    ShowWindowEvent.WaitOne();
+                    Dispatcher.Invoke(() =>
+                    {
+                        if (MainWindow is MainWindow window)
+                        {
+                            window.ShowFromBackground();
+                        }
+                    });
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[App] 显示窗口失败：{ex.Message}");
+                }
+            }
+        })
+        {
+            IsBackground = true,
+            Name = "ShowWindowListener"
+        };
+        thread.Start();
     }
 
     private void App_OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)

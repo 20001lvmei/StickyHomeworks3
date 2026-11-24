@@ -64,6 +64,10 @@ StickyHomeworks3 是一款支持富文本的桌面作业贴工具。
 
 下载完成后，将软件压缩包解压到一个您喜欢的地方，运行 `StickyHomeworks3.exe` 即可开始使用。
 
+- 发布包是**单个 exe**（约 60 MB），不需要安装其它文件。
+- 依赖 [.NET 8.0 桌面运行时](https://dotnet.microsoft.com/zh-cn/download/dotnet/thank-you/runtime-desktop-8.0.1-windows-x64-installer)；如果提示缺少运行时，装一下即可。
+- 程序是单实例的：如果它已经在运行（比如被冻结在桌面底层、被其它窗口挡住），再双击一次 exe 就会把已有窗口显示到最前。
+
 ## 开发
 
 本应用目前的开发状态：

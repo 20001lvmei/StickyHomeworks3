@@ -103,15 +103,32 @@ public partial class App : AppEx
             }).
             Build();
         _ = Host.StartAsync();
-        // 首次启动：先走一遍引导（选科目、是否开机自启）
+        // 先把主窗口创建出来，确保 Application.MainWindow 指向它；
+        // 否则 OOBE 窗口会成为 MainWindow，关闭后触发 ShutdownMode=OnMainWindowClose 直接退出。
+        MainWindow = GetService<MainWindow>();
+
         var settingsService = GetService<SettingsService>();
         if (!settingsService.Settings.IsFirstRunCompleted)
         {
             var oobe = new OobeWindow(settingsService);
             oobe.ShowDialog();
+
+            if (!settingsService.Settings.IsFirstRunCompleted)
+            {
+                // 用户直接关掉了引导窗口：给一套默认科目，避免每次启动都弹
+                foreach (var subject in new[] { "语文", "数学", "外语", "其它" })
+                {
+                    if (!settingsService.Settings.Subjects.Contains(subject))
+                    {
+                        settingsService.Settings.Subjects.Add(subject);
+                    }
+                }
+
+                settingsService.Settings.IsFirstRunCompleted = true;
+                settingsService.SaveSettings();
+            }
         }
 
-        MainWindow = GetService<MainWindow>();
         GetService<MainWindow>().Show();
         StartShowWindowListener();
         StartTrayIcon();

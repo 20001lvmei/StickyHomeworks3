@@ -232,7 +232,6 @@
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding SettingsService.Settings.IsFrozen}" Value="True">
                                                 <Setter Property="Content" Value="{materialDesign:PackIcon Snowflake, Size=18}"/>
-                                                <Setter Property="Foreground" Value="{DynamicResource PrimaryHueMidBrush}"/>
                                                 <Setter Property="ToolTip" Value="已冻结：仅可查看，点此解冻"/>
                                             </DataTrigger>
                                             <DataTrigger Binding="{Binding SettingsService.Settings.IsFrozen}" Value="False">

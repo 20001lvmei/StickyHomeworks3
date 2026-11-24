@@ -39,6 +39,9 @@ public class SettingsService : ObservableRecipient, IHostedService
         Settings = AppStorage.Load<Settings>(SettingsFileName) ?? new Settings();
         Settings.Normalize();
 
+        // 应用开机自启设置（每次启动都重新落地一次，程序换路径后也能自动修正）
+        AutoStartHelper.Apply(Settings.IsAutoStartEnabled);
+
         applicationLifetime.ApplicationStopping.Register(Flush);
     }
 
@@ -129,6 +132,14 @@ public class SettingsService : ObservableRecipient, IHostedService
 
     private void OnSettingsPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
+        if (e.PropertyName == nameof(Settings.IsAutoStartEnabled))
+        {
+            if (!AutoStartHelper.Apply(Settings.IsAutoStartEnabled))
+            {
+                Debug.WriteLine("[SettingsService] 开机自启设置未能生效（快捷方式与注册表写入都失败了）。");
+            }
+        }
+
         OnSettingsChanged?.Invoke(sender, e);
         ScheduleSave();
     }

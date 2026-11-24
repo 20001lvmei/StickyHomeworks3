@@ -88,136 +88,20 @@ public class Settings : ObservableRecipient
 
     #region General
 
-    private const string ShortcutFileName = "StickyHomeworks3.lnk";
-
-    private const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
-
-    private const string RunValueName = "StickyHomeworks3";
-
-    private static readonly string[] LegacyShortcutFileNames = { "StickyHomeworks.lnk" };
-
-    private static string? ExecutablePath =>
-        Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule?.FileName;
-
-    private static string StartupShortcutPath =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), ShortcutFileName);
-
-    private static bool RunKeyExists()
-    {
-        try
-        {
-            using var key = Registry.CurrentUser.OpenSubKey(RunKeyPath);
-            return key?.GetValue(RunValueName) is string value && value.Length > 0;
-        }
-        catch (Exception)
-        {
-            return false;
-        }
-    }
-
-    private static void SetRunKey(bool enabled)
-    {
-        using var key = Registry.CurrentUser.CreateSubKey(RunKeyPath);
-        if (key == null)
-        {
-            throw new InvalidOperationException("无法打开注册表 Run 项。");
-        }
-
-        if (enabled)
-        {
-            var exe = ExecutablePath;
-            if (string.IsNullOrWhiteSpace(exe))
-            {
-                throw new InvalidOperationException("无法获取程序路径。");
-            }
-
-            key.SetValue(RunValueName, $"\"{exe}\"");
-        }
-        else if (key.GetValue(RunValueName) != null)
-        {
-            key.DeleteValue(RunValueName, false);
-        }
-    }
+    private bool _isAutoStartEnabled;
 
     /// <summary>
-    /// 是否开机自启。
-    /// <para>
-    /// 优先在“启动”文件夹创建快捷方式；如果该目录不可写（权限/安全软件/策略限制），
-    /// 自动回退到 <c>HKCU\Software\Microsoft\Windows\CurrentVersion\Run</c>。
-    /// 两者只要有一个生效就视为已启用。
-    /// </para>
+    /// 是否开机自启（保存的是用户意愿，真正的注册由 <c>AutoStartHelper</c> 在启动时应用）。
+    /// 这样即使某次写入快捷方式/注册表失败，开关也不会自己弹回去。
     /// </summary>
     public bool IsAutoStartEnabled
     {
-        get => File.Exists(StartupShortcutPath) || RunKeyExists();
+        get => _isAutoStartEnabled;
         set
         {
-            var startup = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
-            var path = StartupShortcutPath;
-            try
-            {
-                if (value)
-                {
-                    var created = false;
-                    try
-                    {
-                        using var shortcut = new WindowsShortcut();
-                        shortcut.Path = ExecutablePath;
-                        // 工作目录固定为程序目录，避免从不同工作目录启动时读写到不同的数据文件
-                        shortcut.WorkingDirectory = AppContext.BaseDirectory;
-                        shortcut.Save(path);
-                        created = File.Exists(path);
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine($"[Settings] 创建启动快捷方式失败：{ex.Message}");
-                    }
-
-                    if (!created)
-                    {
-                        // 启动目录不可写时回退到注册表 Run 项
-                        SetRunKey(true);
-                        Debug.WriteLine("[Settings] 已改用注册表 Run 项实现开机自启。");
-                    }
-
-                    // 清掉旧版本留下的自启动快捷方式，避免同时启动两个实例
-                    foreach (var legacyName in LegacyShortcutFileNames)
-                    {
-                        var legacyPath = Path.Combine(startup, legacyName);
-                        if (File.Exists(legacyPath))
-                        {
-                            File.Delete(legacyPath);
-                        }
-                    }
-                }
-                else
-                {
-                    if (File.Exists(path))
-                    {
-                        File.Delete(path);
-                    }
-
-                    SetRunKey(false);
-
-                    foreach (var legacyName in LegacyShortcutFileNames)
-                    {
-                        var legacyPath = Path.Combine(startup, legacyName);
-                        if (File.Exists(legacyPath))
-                        {
-                            File.Delete(legacyPath);
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"[Settings] 设置开机自启失败：{ex.Message}");
-            }
-            finally
-            {
-                // 无论成功与否都刷新一次，让开关显示真实状态
-                OnPropertyChanged(nameof(IsAutoStartEnabled));
-            }
+            if (value == _isAutoStartEnabled) return;
+            _isAutoStartEnabled = value;
+            OnPropertyChanged();
         }
     }
 

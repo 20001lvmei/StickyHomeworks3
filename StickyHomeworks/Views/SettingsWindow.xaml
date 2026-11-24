@@ -626,13 +626,24 @@
                                                 </Button>
                                                 <Button HorizontalAlignment="Left" Margin="6"
                                                             Style="{StaticResource MaterialDesignFlatButton}"
-                                                            Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}">
+                                                            Click="ButtonLicense_OnClick">
                                                     <ely:IconText Kind="License" Text="开源许可"/>
-                                                    <Button.CommandParameter>
-                                                        <StaticResource ResourceKey="OpenSourceLicense" />
-                                                    </Button.CommandParameter>
                                                 </Button>
-
+                                                <Button HorizontalAlignment="Left" Margin="6"
+                                                            Style="{StaticResource MaterialDesignFlatButton}"
+                                                            Click="ButtonContributors_OnClick">
+                                                    <ely:IconText Kind="PeopleGroupOutline" Text="贡献人员" />
+                                                </Button>
+                                                <Button HorizontalAlignment="Left" Margin="6"
+                                                            Style="{StaticResource MaterialDesignFlatButton}"
+                                                            Click="ButtonThirdPartyLibs_OnClick">
+                                                    <ely:IconText Kind="PackageVariant" Text="第三方库" />
+                                                </Button>
+                                                <Button HorizontalAlignment="Left" Margin="6"
+                                                            Style="{StaticResource MaterialDesignFlatButton}"
+                                                            Click="ButtonRestoreTheme_OnClick">
+                                                    <ely:IconText Kind="PaletteOutline" Text="恢复默认蓝色主题" />
+                                                </Button>
                                             </WrapPanel>
                                         </StackPanel>
                                     </Grid>
@@ -658,30 +669,8 @@
                                             开发与致谢
                                         </Paragraph>
                                         <Paragraph>
-                                            <Button HorizontalAlignment="Left" Margin="6"
-                                                    Style="{StaticResource MaterialDesignFlatButton}"
-                                                    Click="ButtonContributors_OnClick">
-                                                <ely:IconText Kind="PeopleGroupOutline" Text="贡献人员" />
-                                            </Button>
-                                            <Button HorizontalAlignment="Left" Margin="6"
-                                                    Style="{StaticResource MaterialDesignFlatButton}"
-                                                    Click="ButtonThirdPartyLibs_OnClick">
-                                                <ely:IconText Kind="PackageVariant" Text="第三方库" />
-                                            </Button></Paragraph>
-                                        <Paragraph>
                                             本应用基于 <Hyperlink NavigateUri="https://github.com/HelloWRC/StickyHomeworks"
                                                                   RequestNavigate="Hyperlink_OnRequestNavigate">HelloWRC/StickyHomeworks</Hyperlink>（GPLv3）修改；现由 20001lvmei 维护，DeepSeek 参与代码修复与功能实现。
-                                        </Paragraph>
-                                        <Paragraph>
-                                            <Button HorizontalAlignment="Left" Margin="6"
-                                                    Style="{StaticResource MaterialDesignFlatButton}"
-                                                    Click="ButtonRestoreTheme_OnClick">
-                                                <ely:IconText Kind="PaletteOutline" Text="恢复默认蓝色主题" />
-                                            </Button>
-                                        </Paragraph>
-
-                                        <Paragraph Foreground="#fff7d1ec">
-                                            永远喜欢爱莉希雅
                                         </Paragraph>
 
                                     </FlowDocument>

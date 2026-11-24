@@ -124,6 +124,11 @@ public partial class SettingsWindow : MyWindow
         AppEx.GetService<SettingsService>().SaveSettings();
     }
 
+    private async void ButtonLicense_OnClick(object sender, RoutedEventArgs e)
+    {
+        await ShowDialog("OpenSourceLicense");
+    }
+
     private void Hyperlink_OnRequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs e)
     {
         OpenUrl(e.Uri.AbsoluteUri);
@@ -139,10 +144,27 @@ public partial class SettingsWindow : MyWindow
                 FileName = url,
                 UseShellExecute = true
             });
+            return;
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[SettingsWindow] 打开链接失败：{url}，{ex.Message}");
+            Debug.WriteLine($"[SettingsWindow] 打开链接失败（ShellExecute）：{ex.Message}");
+        }
+
+        try
+        {
+            // 兜底：交给 cmd 的 start 打开默认浏览器
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "cmd.exe",
+                Arguments = $"/c start \"\" \"{url}\"",
+                UseShellExecute = false,
+                CreateNoWindow = true
+            });
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[SettingsWindow] 打开链接失败（cmd start）：{ex.Message}");
         }
     }
 

@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -23,7 +23,6 @@ using StickyHomeworks.Views;
 using System.Windows.Automation;
 using System.Windows.Forms;
 using System.Windows.Threading;
-using Stfu.Linq;
 using DataFormats = System.Windows.DataFormats;
 using DragEventArgs = System.Windows.DragEventArgs;
 
@@ -135,26 +134,32 @@ public partial class MainWindow : Window
 
     protected override void OnInitialized(EventArgs e)
     {
-        ViewModel.ExpiredHomeworks = ProfileService.CleanupOutdated();
-        if (ViewModel.ExpiredHomeworks.Count > 0)
+        // 过期作业不再直接删除，而是归档到 Profile.ArchivedHomeworks 中并保存，避免重启后数据丢失
+        ViewModel.ArchivedHomeworks = ProfileService.ArchiveOutdated(SettingsService.Settings.IsAutoArchiveEnabled);
+        UpdateArchivedHomeworkState();
+        if (ViewModel.ArchivedHomeworks.Count > 0)
         {
-            ViewModel.CanRecoverExpireHomework = true;
-            ViewModel.SnackbarMessageQueue.Enqueue($"清除了{ViewModel.ExpiredHomeworks.Count}条过期的作业。",
-                "恢复", (o) => { RecoverExpiredHomework(); }, null, false, false, TimeSpan.FromSeconds(30));
+            ViewModel.SnackbarMessageQueue.Enqueue($"已将{ViewModel.ArchivedHomeworks.Count}条过期作业归档。",
+                "恢复", (o) => { RestoreArchivedHomework(); }, null, false, false, TimeSpan.FromSeconds(30));
         }
         base.OnInitialized(e);
     }
 
-    private void RecoverExpiredHomework()
+    private void UpdateArchivedHomeworkState()
     {
-        if (!ViewModel.CanRecoverExpireHomework)
-            return;
-        ViewModel.CanRecoverExpireHomework = false;
-        var rm = ViewModel.ExpiredHomeworks;
-        foreach (var i in rm)
+        ViewModel.HasArchivedHomeworks = ProfileService.Profile.ArchivedHomeworks.Count > 0;
+    }
+
+    private void RestoreArchivedHomework()
+    {
+        var count = ProfileService.RestoreArchived();
+        if (count == 0)
         {
-            ProfileService.Profile.Homeworks.Add(i);
+            return;
         }
+
+        UpdateArchivedHomeworkState();
+        ViewModel.SnackbarMessageQueue.Enqueue($"已恢复{count}条作业。");
     }
 
     protected override void OnContentRendered(EventArgs e)
@@ -216,7 +221,11 @@ public partial class MainWindow : Window
 
     private void ButtonAddHomeworkCompleted_OnClick(object sender, RoutedEventArgs e)
     {
-        ProfileService.Profile.Homeworks.Add(ViewModel.EditingHomework);
+        if (!ProfileService.Profile.Homeworks.Contains(ViewModel.EditingHomework))
+        {
+            ProfileService.Profile.Homeworks.Add(ViewModel.EditingHomework);
+        }
+        ProfileService.SaveProfile();
         ViewModel.IsDrawerOpened = false;
     }
 
@@ -268,8 +277,9 @@ public partial class MainWindow : Window
         }
 
         SavePos();
-        SettingsService.SaveSettings();
-        ProfileService.SaveProfile();
+        // 退出前立即落盘，避免防抖中的保存被进程结束吞掉
+        SettingsService.Flush();
+        ProfileService.Flush();
     }
 
     private void ButtonEditTags_OnClick(object sender, RoutedEventArgs e)
@@ -304,7 +314,7 @@ public partial class MainWindow : Window
             homeworkEditWindow.Left = p.X / dpiX;
             homeworkEditWindow.Top = Math.Min(p.Y, screen.Bottom - homeworkEditWindow.ActualHeight * dpiY) / dpiY;
         }
-        catch (Exception e)
+        catch (Exception)
         {
             // ignored
         }
@@ -483,7 +493,7 @@ public partial class MainWindow : Window
 
     private void MenuItemRecoverExpiredHomework_OnClick(object sender, RoutedEventArgs e)
     {
-        RecoverExpiredHomework();
+        RestoreArchivedHomework();
     }
 
     private void MainWindow_OnDragOver(object sender, DragEventArgs e)

@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Windows;
@@ -17,14 +17,12 @@ public class RichTextBoxBindingBehavior : Behavior<RichTextBox>
     {
         AssociatedObject.TextChanged += (obj2, e2) =>
         {
-            var sw = new Stopwatch();
-            sw.Start();
-            RichTextBox richTextBox2 = obj2 as RichTextBox;
-            if (richTextBox2 != null)
+            if (obj2 is not RichTextBox richTextBox2)
             {
-                SetDocumentXaml(this, XamlWriter.Save(richTextBox2.Document));
+                return;
             }
 
+            SetDocumentXaml(this, XamlWriter.Save(richTextBox2.Document));
         };
         base.OnAttached();
     }

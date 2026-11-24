@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -109,12 +109,9 @@ public sealed class WallpaperPickingService : IHostedService, INotifyPropertyCha
         await GetWallpaperAsync();
     }
 
-    private async void RegistryNotifierOnRegistryKeyUpdated()
+    private void RegistryNotifierOnRegistryKeyUpdated()
     {
-        Application.Current.Dispatcher.InvokeAsync(async () =>
-        {
-            await GetWallpaperAsync();
-        });
+        _ = Application.Current.Dispatcher.InvokeAsync(() => GetWallpaperAsync());
     }
 
     private IntPtr HwndSourceHookProcess(IntPtr hwnd, int msg, IntPtr wparam, IntPtr lparam, ref bool handled)
@@ -153,8 +150,14 @@ public sealed class WallpaperPickingService : IHostedService, INotifyPropertyCha
         {
             var k = Registry.CurrentUser.OpenSubKey("Control Panel\\Desktop");
             var path = (string?)k?.GetValue("WallPaper");
-            var b = Screen.PrimaryScreen.Bounds;
-            return path == null? null : new Bitmap(Image.FromFile(path), b.Width, b.Height);
+            var screen = Screen.PrimaryScreen;
+            if (path == null || screen == null)
+            {
+                return null;
+            }
+
+            var b = screen.Bounds;
+            return new Bitmap(Image.FromFile(path), b.Width, b.Height);
         }
         catch
         {
@@ -243,14 +246,13 @@ public sealed class WallpaperPickingService : IHostedService, INotifyPropertyCha
         WallpaperColorPlatteChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    public Task StartAsync(CancellationToken cancellationToken)
-    {
-        return new Task(() => {});
-    }
+    public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
     public Task StopAsync(CancellationToken cancellationToken)
     {
-        return new Task(() => { });
+        UpdateTimer.Stop();
+        RegistryNotifier.Dispose();
+        return Task.CompletedTask;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

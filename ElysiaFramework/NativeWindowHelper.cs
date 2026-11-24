@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -88,12 +88,14 @@ public static class NativeWindowHelper
     );
 
 
-    public static bool IsForegroundFullScreen(Screen screen)
+    public static bool IsForegroundFullScreen(Screen? screen)
     {
+        screen ??= Screen.PrimaryScreen;
         if (screen == null)
         {
-            screen = Screen.PrimaryScreen;
+            return false;
         }
+
         RECT rect = new RECT();
         var win = GetForegroundWindow();
         GetWindowRect(new HandleRef(null, win), ref rect);
@@ -113,12 +115,14 @@ public static class NativeWindowHelper
         return new Rectangle(rect.Left, rect.Top, rect.Right - rect.Left, rect.Bottom - rect.Top).Contains(screen.Bounds);
     }
 
-    public static bool IsForegroundMaxWindow(Screen screen)
+    public static bool IsForegroundMaxWindow(Screen? screen)
     {
+        screen ??= Screen.PrimaryScreen;
         if (screen == null)
         {
-            screen = Screen.PrimaryScreen;
+            return false;
         }
+
         RECT rect = new RECT();
         var win = GetForegroundWindow();
         GetWindowRect(new HandleRef(null, win), ref rect);
@@ -211,7 +215,6 @@ public static class NativeWindowHelper
     public static List<DesktopWindow> GetAllWindows(bool isDetailed=false)
     {
         var windows = new List<DesktopWindow>();
-        string className;
         var queue = new Queue<IntPtr>();
         queue.Enqueue(IntPtr.Zero);
 

@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Input;
@@ -106,6 +106,32 @@ public partial class SettingsWindow : MyWindow
     private void ButtonCrash_OnClick(object sender, RoutedEventArgs e)
     {
         throw new Exception("Crash test.");
+    }
+
+    private void ButtonGitHub_OnClick(object sender, RoutedEventArgs e)
+    {
+        OpenUrl("https://github.com/20001lvmei/StickyHomeworks3");
+    }
+
+    private void ButtonFeedback_OnClick(object sender, RoutedEventArgs e)
+    {
+        OpenUrl("https://github.com/20001lvmei/StickyHomeworks3/issues");
+    }
+
+    private static void OpenUrl(string url)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = url,
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[SettingsWindow] 打开链接失败：{url}，{ex.Message}");
+        }
     }
 
     private void HyperlinkMsAppCenter_OnClick(object sender, RoutedEventArgs e)

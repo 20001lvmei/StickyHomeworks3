@@ -363,3 +363,13 @@ MigrationBackup/
 FodyWeavers.xsd
 
 .idea/*
+# 运行期数据（Profile.json / Settings.json / app.db 现在保存在 %LOCALAPPDATA%\StickyHomeworks3）
+db/
+Profile.json
+Settings.json
+*.bak
+*.tmp
+*.corrupt-*
+
+# 发布产物
+dist/

@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using MaterialDesignColors;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -32,6 +32,7 @@ public class Settings : ObservableRecipient
     private double _windowWidth = 400;
     private double _windowHeight = 800;
     private bool _isBottom = true;
+    private bool _isAutoArchiveEnabled = true;
     private string _title = "作业";
     private double _maxPanelWidth = 350;
     private bool _isDebugShowInTaskBar = false;
@@ -83,29 +84,53 @@ public class Settings : ObservableRecipient
 
     #region General
 
+    private const string ShortcutFileName = "StickyHomeworks3.lnk";
+
+    private static readonly string[] LegacyShortcutFileNames = { "StickyHomeworks.lnk" };
+
     public bool IsAutoStartEnabled
     {
         get => File.Exists(
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "StickyHomeworks.lnk"));
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), ShortcutFileName));
         set
         {
-            var path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "StickyHomeworks.lnk");
+            var startup = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
+            var path = Path.Combine(startup, ShortcutFileName);
             try
             {
                 if (value)
                 {
                     using var shortcut = new WindowsShortcut();
                     shortcut.Path = Environment.ProcessPath;
-                    shortcut.WorkingDirectory = Environment.CurrentDirectory;
+                    // 工作目录固定为程序目录，避免从不同工作目录启动时读写到不同的数据文件
+                    shortcut.WorkingDirectory = AppContext.BaseDirectory;
                     shortcut.Save(path);
+
+                    // 清掉旧版本留下的自启动快捷方式，避免同时启动两个实例
+                    foreach (var legacyName in LegacyShortcutFileNames)
+                    {
+                        var legacyPath = Path.Combine(startup, legacyName);
+                        if (File.Exists(legacyPath))
+                        {
+                            File.Delete(legacyPath);
+                        }
+                    }
                 }
                 else
                 {
                     File.Delete(path);
+                    foreach (var legacyName in LegacyShortcutFileNames)
+                    {
+                        var legacyPath = Path.Combine(startup, legacyName);
+                        if (File.Exists(legacyPath))
+                        {
+                            File.Delete(legacyPath);
+                        }
+                    }
                 }
                 OnPropertyChanged();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // ignored
             }
@@ -119,6 +144,21 @@ public class Settings : ObservableRecipient
         {
             if (value == _isBottom) return;
             _isBottom = value;
+            OnPropertyChanged();
+        }
+    }
+
+    /// <summary>
+    /// 是否在启动时把已经过期的作业归档（从列表中移除，但保留在 Profile.ArchivedHomeworks 中，可随时恢复）。
+    /// 关闭后过期作业会一直显示在列表中。
+    /// </summary>
+    public bool IsAutoArchiveEnabled
+    {
+        get => _isAutoArchiveEnabled;
+        set
+        {
+            if (value == _isAutoArchiveEnabled) return;
+            _isAutoArchiveEnabled = value;
             OnPropertyChanged();
         }
     }

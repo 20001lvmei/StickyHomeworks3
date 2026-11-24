@@ -11,13 +11,9 @@ namespace ElysiaFramework.Services;
 
 public class ThemeService : IHostedService, IThemeService
 {
-    public async Task StartAsync(CancellationToken cancellationToken)
-    {
-    }
+    public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
-    public async Task StopAsync(CancellationToken cancellationToken)
-    {
-    }
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
     public event EventHandler<ThemeUpdatedEventArgs>? ThemeUpdated;
 

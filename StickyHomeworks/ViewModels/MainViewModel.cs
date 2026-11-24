@@ -1,4 +1,4 @@
-﻿using System.Windows.Controls;
+using System.Windows.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
 using MaterialDesignThemes.Wpf;
 using StickyHomeworks.Models;
@@ -22,8 +22,8 @@ public class MainViewModel : ObservableRecipient
     private SnackbarMessageQueue _snackbarMessageQueue = new();
     private Control? _selectedListBoxItem;
     private bool _isUpdatingHomeworkSubject = false;
-    private List<Homework> _expiredHomeworks = new();
-    private bool _canRecoverExpireHomework = false;
+    private List<Homework> _archivedHomeworks = new();
+    private bool _hasArchivedHomeworks = false;
 
     public Control? SelectedListBoxItem
     {
@@ -157,24 +157,30 @@ public class MainViewModel : ObservableRecipient
         }
     }
 
-    public List<Homework> ExpiredHomeworks
+    /// <summary>
+    /// 本次启动时被归档的过期作业。归档的作业会保存到 Profile.json，重启后依然可以通过“恢复已归档的作业”找回。
+    /// </summary>
+    public List<Homework> ArchivedHomeworks
     {
-        get => _expiredHomeworks;
+        get => _archivedHomeworks;
         set
         {
-            if (Equals(value, _expiredHomeworks)) return;
-            _expiredHomeworks = value;
+            if (Equals(value, _archivedHomeworks)) return;
+            _archivedHomeworks = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(ArchivedHomeworkCount));
         }
     }
 
-    public bool CanRecoverExpireHomework
+    public int ArchivedHomeworkCount => ArchivedHomeworks.Count;
+
+    public bool HasArchivedHomeworks
     {
-        get => _canRecoverExpireHomework;
+        get => _hasArchivedHomeworks;
         set
         {
-            if (value == _canRecoverExpireHomework) return;
-            _canRecoverExpireHomework = value;
+            if (value == _hasArchivedHomeworks) return;
+            _hasArchivedHomeworks = value;
             OnPropertyChanged();
         }
     }

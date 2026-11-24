@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace StickyHomeworks.Models;
@@ -9,6 +9,7 @@ public class Homework : ObservableRecipient
     private string _subject = "";
     private DateTime _dueTime = DateTime.Today;
     private ObservableCollection<string> _tags = new();
+    private bool _isArchiveExempt = false;
 
     public string Content
     {
@@ -50,6 +51,21 @@ public class Homework : ObservableRecipient
         {
             if (Equals(value, _tags)) return;
             _tags = value;
+            OnPropertyChanged();
+        }
+    }
+
+    /// <summary>
+    /// 是否豁免自动归档。用户在“恢复已归档的作业”中找回的作业会设置此标记，
+    /// 这样即使截止日期已过，下次启动也不会再次被归档。
+    /// </summary>
+    public bool IsArchiveExempt
+    {
+        get => _isArchiveExempt;
+        set
+        {
+            if (value == _isArchiveExempt) return;
+            _isArchiveExempt = value;
             OnPropertyChanged();
         }
     }

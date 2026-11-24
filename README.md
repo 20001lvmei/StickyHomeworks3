@@ -1,13 +1,13 @@
-# StickyHomeworks
+# StickyHomeworks3
 
 > [!warning]
 > 这个项目还在早期开发中
 
-StickyHomeworks 是一款支持富文本的桌面作业贴工具。
+StickyHomeworks3 是一款支持富文本的桌面作业贴工具。
 
-![image](https://github.com/HelloWRC/StickyHomeworks/assets/55006226/d6dc1553-d3ff-4905-907c-aba79089fc9a)
+![主界面](docs/screenshot.png)
 
-> 背景图片来自[Pixiv@辰暮sora](https://www.pixiv.net/artworks/110847880)
+> 本项目基于 [HelloWRC/StickyHomeworks](https://github.com/HelloWRC/StickyHomeworks) 修改而来，遵循 GPLv3 许可。
 
 ## 功能
 
@@ -16,12 +16,31 @@ StickyHomeworks 是一款支持富文本的桌面作业贴工具。
 - [X] 按科目分组作业
 - [X] 为作业添加标签
 - [X] 主界面全局缩放
-- [X] 自动清理过期作业
+- [X] 自动归档过期作业（可恢复，不再直接删除）
 - [X] 导出作业截图
 - [ ] 作业历史记录
 - [ ] 插入与管理表情包
 - [ ] 插入图片
 - [ ] 插入链接
+
+## 数据保存在哪里
+
+作业与设置保存在用户数据目录中，而不是程序目录，卸载/升级程序不会影响数据：
+
+```
+%LOCALAPPDATA%\StickyHomeworks3\
+├── Profile.json      # 作业数据（含已归档的过期作业）
+├── Profile.json.bak  # 上一次保存的备份
+├── Settings.json     # 设置
+├── crash.log         # 崩溃日志（出现异常时才会生成）
+└── app.db            # 表情包等扩展功能使用的数据库
+```
+
+- 旧版本放在程序目录（或当前工作目录）下的 `Profile.json` / `Settings.json` / `db\app.db` 会在首次启动时自动复制过来，原文件不会被删除。
+- 如需指定其它位置，可以设置环境变量 `STICKYHOMEWORKS3_DATA_DIR`（也兼容旧的 `STICKYHOMEWORKS_DATA_DIR`）。
+- 数据文件损坏时会自动回退到 `.bak` 备份，损坏的文件会被重命名为 `*.corrupt-<时间戳>` 保留，方便排查。
+- 如果首选目录不可写，会自动回退到其它可用目录（`%APPDATA%` → 临时目录 → 程序目录下的 `data`），不会因此启动失败。
+- 过期作业会在启动时被移入归档（`Profile.json` 中的 `ArchivedHomeworks`），可在主界面的「更多选项 → 恢复已归档的作业」中找回；找回后的作业不会再被自动归档。如不希望自动归档，可在设置中关闭。
 
 ## 开始使用
 
@@ -37,30 +56,45 @@ StickyHomeworks 是一款支持富文本的桌面作业贴工具。
 
 > 测试版包含最新的功能，但也可能包含未完善和不稳定的功能，请谨慎使用。
 
-| 下载渠道/通道 | **🚀正式版** <br/>[![GitHub Release](https://img.shields.io/github/v/release/HelloWRC/StickyHomeworks?style=flat-square&logo=GitHub&color=%233fb950)](https://github.com/HelloWRC/ClassIsland/releases/latest)  | 🚧测试版<br/>[![GitHub Release](https://img.shields.io/github/v/release/HelloWRC/StickyHomeworks?include_prereleases&style=flat-square&logo=GitHub&label=BETA)](https://github.com/HelloWRC/ClassIsland/releases/) |
+| 下载渠道/通道 | **🚀正式版** <br/>[![GitHub Release](https://img.shields.io/github/v/release/20001lvmei/StickyHomeworks3?style=flat-square&logo=GitHub&color=%233fb950)](https://github.com/20001lvmei/StickyHomeworks3/releases/latest)  | 🚧测试版<br/>[![GitHub Release](https://img.shields.io/github/v/release/20001lvmei/StickyHomeworks3?include_prereleases&style=flat-square&logo=GitHub&label=BETA)](https://github.com/20001lvmei/StickyHomeworks3/releases) |
 | -- | -- | -- |
-| GitHub | [**GitHub下载**](https://github.com/HelloWRC/StickyHomeworks/releases/latest) | [GitHub下载](https://github.com/HelloWRC/StickyHomeworks/releases) |
-
-<!-- > GitHub Releases 还没有同步历史版本。要下载历史版本，请前往[AppCenter](https://install.appcenter.ms/users/hellowrc/apps/classisland/distribution_groups/public/releases/latest)。 -->
+| GitHub | [**GitHub下载**](https://github.com/20001lvmei/StickyHomeworks3/releases/latest) | [GitHub下载](https://github.com/20001lvmei/StickyHomeworks3/releases) |
 
 ### 3. 解压软件
 
-下载完成后，将软件压缩包解压到一个您喜欢的地方，运行软件即可开始使用。
+下载完成后，将软件压缩包解压到一个您喜欢的地方，运行 `StickyHomeworks3.exe` 即可开始使用。
 
 ## 开发
 
 本应用目前的开发状态：
 
-- 正在[`master`](https://github.com/HelloWRC/StickyHomeworks/tree/master)分支上开发本应用。
+- 正在 [`master`](https://github.com/20001lvmei/StickyHomeworks3/tree/master) 分支上开发本应用。
 
 要在本地编译应用，您需要安装以下负载和工具：
 - [.NET 8.0 SDK](https://dotnet.microsoft.com/zh-cn/download/dotnet/8.0)
 - [Visual Studio](https://visualstudio.microsoft.com/)
 
-对于Visual Studio，您需要在安装时勾选以下工作负载：
+对于 Visual Studio，您需要在安装时勾选以下工作负载：
 - .NET 桌面开发
 
-我们欢迎想要为本应用实现新功能或进行改进的同学提交 [Pull Request](https://github.com/HelloWRC/StickyHomeworks/pulls)。
+解决方案 `StickyHomeworks3.sln` 包含三个项目：
+
+| 项目 | 说明 |
+| -- | -- |
+| `StickyHomeworks` | WPF 主程序（输出 `StickyHomeworks3.exe`） |
+| `StickyHomeworks.Core` | 数据层（EF Core + SQLite，供表情包等扩展功能使用） |
+| `ElysiaFramework` | 自研 UI 框架库 |
+
+> `StickyHomeworks.Web` 是早期尝试的网页版脚手架，尚未完成，已从解决方案中移除，不参与编译。
+
+我们欢迎想要为本应用实现新功能或进行改进的同学提交 [Pull Request](https://github.com/20001lvmei/StickyHomeworks3/pulls)。
+
+## 鸣谢
+
+- [HelloWRC/StickyHomeworks](https://github.com/HelloWRC/StickyHomeworks)：本项目的前身
+- [MaterialDesignInXamlToolkit](https://github.com/MaterialDesignInXAML/MaterialDesignInXamlToolkit)
+- [Emoji.Wpf](https://github.com/emoji-wpf/emoji.wpf)
+- [HarmonyOS Sans](https://developer.harmonyos.com/cn/design/resource)：界面字体
 
 ## 许可证
 

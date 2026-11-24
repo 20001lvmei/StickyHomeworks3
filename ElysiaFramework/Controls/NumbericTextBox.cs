@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
@@ -47,14 +47,14 @@ public class NumbericTextBox : TextBox
     /// <summary>
     /// 先前合法的文本
     /// </summary>
-    private string lastLegalText;
+    private string lastLegalText = string.Empty;
 
     /// <summary>
     /// 是否为粘贴
     /// </summary>
     private bool isPaste;
 
-    public event EventHandler<TextChangedEventArgs> PreviewTextChanged;
+    public event EventHandler<TextChangedEventArgs>? PreviewTextChanged;
 
     #endregion Fields
 

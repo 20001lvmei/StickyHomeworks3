@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -26,7 +26,7 @@ public partial class WindowMovingDemo : UserControl
         InitializeComponent();
     }
 
-    protected override async void OnPropertyChanged(DependencyPropertyChangedEventArgs e)
+    protected override void OnPropertyChanged(DependencyPropertyChangedEventArgs e)
     {
         if (e.Property == IsVisibleProperty)
         {

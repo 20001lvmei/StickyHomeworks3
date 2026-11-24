@@ -13,6 +13,7 @@ using System.Windows;
 
 [assembly: AssemblyVersion("0.1.0.0")]
 [assembly: AssemblyFileVersion("0.1.0.0")]
-[assembly: AssemblyTitle("StickyHomeworks")]
-[assembly: AssemblyProduct("StickyHomeworks")]
+[assembly: AssemblyTitle("StickyHomeworks3")]
+[assembly: AssemblyProduct("StickyHomeworks3")]
+[assembly: AssemblyCompany("20001lvmei")]
 [assembly: SupportedOSPlatform("Windows")]

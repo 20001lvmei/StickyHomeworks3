@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
@@ -8,6 +8,11 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
 	<IncludePackageReferencesDuringMarkupCompilation>true</IncludePackageReferencesDuringMarkupCompilation>
 	<ApplicationIcon>Assets\AppLogo.ico</ApplicationIcon>
+    <!-- 应用对外名称：生成 StickyHomeworks3.exe -->
+    <AssemblyName>StickyHomeworks3</AssemblyName>
+    <Product>StickyHomeworks3</Product>
+    <AssemblyTitle>StickyHomeworks3</AssemblyTitle>
+    <Company>20001lvmei</Company>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <GenerateAssemblyInfo>False</GenerateAssemblyInfo>
@@ -18,15 +23,9 @@
     <DebugType>embedded</DebugType>
   </PropertyGroup>
   <ItemGroup>
-    <EditorConfigFiles Remove="E:\Coding\StickyHomeworks\StickyHomeworks\.editorconfig" />
-  </ItemGroup>
-  <ItemGroup>
     <None Remove="Assets\AppLogo.png" />
     <None Remove="Assets\Contributiors\HelloWRC%4064w.jpg" />
     <None Remove="Assets\光辉矢愿_瞄准.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="E:\Coding\StickyHomeworks\StickyHomeworks\.editorconfig" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ElysiaFramework\ElysiaFramework.csproj" />

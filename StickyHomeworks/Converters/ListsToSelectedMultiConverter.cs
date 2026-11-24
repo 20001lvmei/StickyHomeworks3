@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Windows.Data;
 
@@ -21,7 +21,10 @@ public class ListsToSelectedMultiConverter : IMultiValueConverter
     {
         if (CurrentValue == null || AllCollection == null)
         {
+            // MultiBinding 中返回 null 表示“不更新任何源”
+#pragma warning disable CS8603
             return null;
+#pragma warning restore CS8603
         }
         if ((bool)value && !AllCollection.Contains(CurrentValue))
         {

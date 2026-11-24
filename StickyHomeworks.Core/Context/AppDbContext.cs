@@ -1,5 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using Microsoft.EntityFrameworkCore;
 using StickyHomeworks.Core.Entities;
 
@@ -24,7 +26,74 @@ public partial class AppDbContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        optionsBuilder.UseSqlite("Data Source=db/app.db");
+        optionsBuilder.UseSqlite($"Data Source={GetDatabasePath()}");
+    }
+
+    /// <summary>
+    /// 数据库固定保存在用户数据目录中，不再依赖当前工作目录。
+    /// 旧版本把 app.db 放在程序目录下的 db 文件夹里，这里会先把它迁移过来。
+    /// </summary>
+    private static string GetDatabasePath()
+    {
+        var dataDirectory = GetDataDirectory();
+        try
+        {
+            Directory.CreateDirectory(dataDirectory);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Debug.WriteLine($"[AppDbContext] 创建数据目录失败：{dataDirectory}，{ex.Message}");
+            dataDirectory = Path.Combine(Path.GetTempPath(), "StickyHomeworks3");
+            Directory.CreateDirectory(dataDirectory);
+        }
+
+        var target = Path.Combine(dataDirectory, "app.db");
+        if (File.Exists(target))
+        {
+            return target;
+        }
+
+        foreach (var legacy in new[]
+                 {
+                     Path.Combine(AppContext.BaseDirectory, "db", "app.db"),
+                     Path.Combine(Environment.CurrentDirectory, "db", "app.db")
+                 })
+        {
+            try
+            {
+                if (!File.Exists(legacy))
+                {
+                    continue;
+                }
+
+                File.Copy(legacy, target, false);
+                break;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                Debug.WriteLine($"[AppDbContext] 迁移数据库失败：{legacy}，{ex.Message}");
+            }
+        }
+
+        return target;
+    }
+
+    private static string GetDataDirectory()
+    {
+        var overridden = Environment.GetEnvironmentVariable("STICKYHOMEWORKS3_DATA_DIR")
+                         ?? Environment.GetEnvironmentVariable("STICKYHOMEWORKS_DATA_DIR");
+        if (!string.IsNullOrWhiteSpace(overridden))
+        {
+            return overridden;
+        }
+
+        var appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        if (string.IsNullOrWhiteSpace(appData))
+        {
+            appData = AppContext.BaseDirectory;
+        }
+
+        return Path.Combine(appData, "StickyHomeworks3");
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

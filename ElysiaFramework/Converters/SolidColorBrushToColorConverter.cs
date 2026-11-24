@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Globalization;
 using System.Windows.Data;
 using System.Windows.Media;
@@ -15,6 +15,7 @@ public class SolidColorBrushToColorConverter : IValueConverter
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
-        return null;
+        // 单向转换，回写时不做任何更新
+        return Binding.DoNothing;
     }
 }

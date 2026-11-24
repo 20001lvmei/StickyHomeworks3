@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using ElysiaFramework;
 using System.Windows.Media;
@@ -92,7 +92,5 @@ public class ThemeBackgroundService : IHostedService
         UpdateStopWatch.Start();
     }
 
-    public async Task StopAsync(CancellationToken cancellationToken)
-    {
-    }
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }

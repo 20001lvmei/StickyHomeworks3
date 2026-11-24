@@ -47,6 +47,11 @@ public partial class MainWindow : Window
     /// </summary>
     private bool _forceForeground;
 
+    /// <summary>
+    /// 是否因为被激活而临时浮到最前（失焦后恢复置底）。
+    /// </summary>
+    private bool _raisedByActivation;
+
     public MainWindow(ProfileService profileService,
                       SettingsService settingsService,
                       WindowFocusObserverService focusObserverService)
@@ -503,6 +508,17 @@ public partial class MainWindow : Window
 
     private void MainWindow_OnActivated(object? sender, EventArgs e)
     {
+        // 置底模式下被激活（点任务栏、点窗口）时先浮到最前，否则点了也没反应；
+        // 失去焦点后再回到底层。
+        if (SettingsService.Settings.IsBottom && !_forceForeground)
+        {
+            var hWnd = new WindowInteropHelper(this).Handle;
+            NativeWindowHelper.SetWindowPos(hWnd, NativeWindowHelper.HWND_TOP, 0, 0, 0, 0,
+                NativeWindowHelper.SWP_NOSIZE | NativeWindowHelper.SWP_NOMOVE);
+            _raisedByActivation = true;
+            return;
+        }
+
         SetBottom();
     }
 
@@ -543,7 +559,11 @@ public partial class MainWindow : Window
 
     private void MainWindow_OnDeactivated(object? sender, EventArgs e)
     {
-        //MainListView.SelectedIndex = -1;
+        if (_raisedByActivation && SettingsService.Settings.IsBottom)
+        {
+            _raisedByActivation = false;
+            SetBottom();
+        }
     }
 
     private async void ButtonExport_OnClick(object sender, RoutedEventArgs e)

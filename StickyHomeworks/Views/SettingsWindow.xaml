@@ -105,9 +105,6 @@
                     AvatarImage="/Assets/Contributiors/20001lvmei@64w.png"
                     Name="20001lvmei" Description="当前维护者" />
                 <models:ContributionMember
-                    AvatarImage="/Assets/Contributiors/wac123@64w.png"
-                    Name="wac123" Description="前开发者，早期功能与界面" />
-                <models:ContributionMember
                     AvatarImage="/Assets/Contributiors/HelloWRC@64w.jpg"
                     Name="HelloWRC" Description="StickyHomeworks 原作者" />
                 <models:ContributionMember
@@ -673,7 +670,7 @@
                                             </Button></Paragraph>
                                         <Paragraph>
                                             本应用基于 <Hyperlink NavigateUri="https://github.com/HelloWRC/StickyHomeworks"
-                                                                  RequestNavigate="Hyperlink_OnRequestNavigate">HelloWRC/StickyHomeworks</Hyperlink>（GPLv3）修改；由 wac123 完成早期版本，现由 20001lvmei 维护，DeepSeek 参与代码修复与功能实现。
+                                                                  RequestNavigate="Hyperlink_OnRequestNavigate">HelloWRC/StickyHomeworks</Hyperlink>（GPLv3）修改；现由 20001lvmei 维护，DeepSeek 参与代码修复与功能实现。
                                         </Paragraph>
                                         <Paragraph>
                                             <Button HorizontalAlignment="Left" Margin="6"

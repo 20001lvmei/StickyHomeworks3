@@ -26,7 +26,7 @@ public class Settings : ObservableRecipient
     private string _wallpaperClassName = "";
     private bool _isFallbackModeEnabled = true;
     private double _targetLightValue = 0.6;
-    private double _opacity = 0.7;
+    private double _opacity = 1;
     private double _scale = 1.5;
     private ObservableCollection<string> _subjects = new();
     private ObservableCollection<string> _tags = new();
@@ -36,6 +36,7 @@ public class Settings : ObservableRecipient
     private double _windowWidth = 400;
     private double _windowHeight = 800;
     private bool _isBottom = true;
+    private bool _isFrozen = false;
     private bool _isAutoArchiveEnabled = true;
     private string _title = "作业";
     private double _maxPanelWidth = 350;
@@ -227,6 +228,20 @@ public class Settings : ObservableRecipient
         {
             if (value == _isBottom) return;
             _isBottom = value;
+            OnPropertyChanged();
+        }
+    }
+
+    /// <summary>
+    /// 是否冻结（只能查看，不能修改作业）。
+    /// </summary>
+    public bool IsFrozen
+    {
+        get => _isFrozen;
+        set
+        {
+            if (value == _isFrozen) return;
+            _isFrozen = value;
             OnPropertyChanged();
         }
     }

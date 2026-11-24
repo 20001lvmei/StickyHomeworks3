@@ -291,6 +291,11 @@ public partial class MainWindow : Window
 
     private void CreateHomework()
     {
+        if (!EnsureNotFrozen())
+        {
+            return;
+        }
+
         ViewModel.IsUpdatingHomeworkSubject = true;
         OnHomeworkEditorUpdated?.Invoke(this ,EventArgs.Empty);
         var lastSubject = ViewModel.EditingHomework.Subject;
@@ -376,12 +381,22 @@ public partial class MainWindow : Window
 
     private void ButtonEditTags_OnClick(object sender, RoutedEventArgs e)
     {
+        if (!EnsureNotFrozen())
+        {
+            return;
+        }
+
         OnHomeworkEditorUpdated?.Invoke(this, EventArgs.Empty);
         ViewModel.IsTagEditingPopupOpened = true;
     }
 
     private void ButtonEditHomework_OnClick(object sender, RoutedEventArgs e)
     {
+        if (!EnsureNotFrozen())
+        {
+            return;
+        }
+
         OnHomeworkEditorUpdated?.Invoke(this, EventArgs.Empty);
         ViewModel.IsCreatingMode = false;
         if (ViewModel.SelectedHomework== null)
@@ -414,6 +429,11 @@ public partial class MainWindow : Window
 
     private void ButtonRemoveHomework_OnClick(object sender, RoutedEventArgs e)
     {
+        if (!EnsureNotFrozen())
+        {
+            return;
+        }
+
         ViewModel.IsUpdatingHomeworkSubject = true;
         if (ViewModel.SelectedHomework == null)
             return;
@@ -447,23 +467,38 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// 冻结/解冻窗口：冻结后窗口固定在桌面底层，不会遮挡其它程序。
+    /// 冻结/解冻：冻结后只能查看，不能修改作业。
     /// </summary>
     private void ButtonFreeze_OnClick(object sender, RoutedEventArgs e)
     {
-        SettingsService.Settings.IsBottom = !SettingsService.Settings.IsBottom;
-        var hWnd = new WindowInteropHelper(this).Handle;
-        if (SettingsService.Settings.IsBottom)
+        var frozen = !SettingsService.Settings.IsFrozen;
+        SettingsService.Settings.IsFrozen = frozen;
+        SettingsService.SaveSettings();
+
+        if (frozen)
         {
-            SetBottom();
-            ViewModel.SnackbarMessageQueue.Enqueue("窗口已冻结（置底）。");
+            // 冻结时关掉编辑界面，避免正在编辑
+            ExitEditingMode();
+            ViewModel.SnackbarMessageQueue.Enqueue("已冻结：仅可查看，不能修改作业。");
         }
         else
         {
-            NativeWindowHelper.SetWindowPos(hWnd, NativeWindowHelper.HWND_TOP, 0, 0, 0, 0,
-                NativeWindowHelper.SWP_NOSIZE | NativeWindowHelper.SWP_NOMOVE | NativeWindowHelper.SWP_NOACTIVATE);
-            ViewModel.SnackbarMessageQueue.Enqueue("窗口已解冻。");
+            ViewModel.SnackbarMessageQueue.Enqueue("已解冻：可以正常修改作业。");
         }
+    }
+
+    /// <summary>
+    /// 冻结状态下拦截修改操作。
+    /// </summary>
+    private bool EnsureNotFrozen()
+    {
+        if (!SettingsService.Settings.IsFrozen)
+        {
+            return true;
+        }
+
+        ViewModel.SnackbarMessageQueue.Enqueue("已冻结，请先点雪花按钮解冻。");
+        return false;
     }
 
     private void MainWindow_OnStateChanged(object? sender, EventArgs e)

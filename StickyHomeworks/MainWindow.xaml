@@ -206,6 +206,8 @@
                                                                           Step="0.05"/>
                                         </Grid>
                                         <Separator Margin="-12 4"/>
+                                        <MenuItem Margin="-12 0" Icon="{materialDesign:PackIcon LayersOutline}" Header="窗口置底"
+                                                  IsCheckable="True" IsChecked="{Binding SettingsService.Settings.IsBottom, Mode=TwoWay}"/>
                                         <MenuItem Margin="-12 0" Icon="{materialDesign:PackIcon Refresh}" Header="恢复已归档的作业" Click="MenuItemRecoverExpiredHomework_OnClick" IsEnabled="{Binding ViewModel.HasArchivedHomeworks}"/>
                                         <MenuItem Margin="-12 0" Icon="{materialDesign:PackIcon CogOutline}" Header="更多设置…" Click="ButtonSettings_OnClick"/>
                                         <MenuItem Margin="-12 0" Icon="{materialDesign:PackIcon Close}" Header="退出应用"
@@ -222,18 +224,20 @@
                                           ToolTip="锁定窗口"
                                           Visibility="{Binding ViewModel.IsExpanded, Converter={StaticResource BooleanToVisibilityConverter}}"
                                           IsChecked="{Binding ViewModel.IsUnlocked, Converter={StaticResource InvertBooleanConverter}}" />
-                            <!-- 冻结：把窗口固定到桌面底层，鼠标点不到其它程序也不会盖住它 -->
-                            <Button x:Name="ButtonFreeze" ToolTip="冻结窗口（置底，不遮挡其它程序）"
-                                    Click="ButtonFreeze_OnClick"
+                            <!-- 冻结：只能查看，不能修改作业（雪花） -->
+                            <Button x:Name="ButtonFreeze" Click="ButtonFreeze_OnClick"
                                     Visibility="{Binding ViewModel.IsExpanded, Converter={StaticResource BooleanToVisibilityConverter}}">
                                 <Button.Style>
                                     <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignToolForegroundButton}">
                                         <Style.Triggers>
-                                            <DataTrigger Binding="{Binding SettingsService.Settings.IsBottom}" Value="True">
-                                                <Setter Property="Content" Value="{materialDesign:PackIcon Pin, Size=18}"/>
+                                            <DataTrigger Binding="{Binding SettingsService.Settings.IsFrozen}" Value="True">
+                                                <Setter Property="Content" Value="{materialDesign:PackIcon Snowflake, Size=18}"/>
+                                                <Setter Property="Foreground" Value="{DynamicResource PrimaryHueMidBrush}"/>
+                                                <Setter Property="ToolTip" Value="已冻结：仅可查看，点此解冻"/>
                                             </DataTrigger>
-                                            <DataTrigger Binding="{Binding SettingsService.Settings.IsBottom}" Value="False">
-                                                <Setter Property="Content" Value="{materialDesign:PackIcon PinOutline, Size=18}"/>
+                                            <DataTrigger Binding="{Binding SettingsService.Settings.IsFrozen}" Value="False">
+                                                <Setter Property="Content" Value="{materialDesign:PackIcon SnowflakeVariant, Size=18}"/>
+                                                <Setter Property="ToolTip" Value="冻结：仅可查看，不能修改作业"/>
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>

@@ -374,6 +374,100 @@ public static class AppStorage
     /// <summary>
     /// 把旧版本（改名/换数据目录之前）的数据目录整体迁移到目标目录。仅在目标目录不存在时执行。
     /// </summary>
+    /// <summary>
+    /// 把数据文件备份到 <c>backups</c> 子目录（按时间命名），并只保留最近的若干份。
+    /// 用于“时间机器”功能，也是防止数据被误删/写坏的兜底。
+    /// </summary>
+    /// <param name="fileName">要备份的数据文件名，例如 <c>Profile.json</c>。</param>
+    /// <param name="minimumInterval">两次备份之间的最小间隔，避免频繁占用空间。</param>
+    /// <param name="keep">保留的备份份数。</param>
+    /// <returns>新备份的完整路径；未产生备份时返回 <c>null</c>。</returns>
+    public static string? BackupFile(string fileName, TimeSpan? minimumInterval = null, int keep = 30)
+    {
+        var source = GetPath(fileName);
+        if (!File.Exists(source))
+        {
+            return null;
+        }
+
+        try
+        {
+            var directory = Path.Combine(DataDirectory, "backups");
+            Directory.CreateDirectory(directory);
+
+            var interval = minimumInterval ?? TimeSpan.FromMinutes(10);
+            var existing = ListBackups(fileName);
+            if (existing.Count > 0 && DateTime.Now - File.GetLastWriteTime(existing[0]) < interval)
+            {
+                return null;
+            }
+
+            var name = Path.GetFileNameWithoutExtension(fileName);
+            var target = Path.Combine(directory, $"{name}_{DateTime.Now:yyyyMMdd_HHmmss}.json");
+            File.Copy(source, target, false);
+
+            // 只保留最近的 keep 份
+            var all = ListBackups(fileName);
+            foreach (var old in all.Skip(keep))
+            {
+                try
+                {
+                    File.Delete(old);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[AppStorage] 清理旧备份失败：{old}，{ex.Message}");
+                }
+            }
+
+            return target;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[AppStorage] 备份失败：{ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// 列出某个数据文件的备份，按时间从新到旧排列。
+    /// </summary>
+    public static List<string> ListBackups(string fileName)
+    {
+        var directory = Path.Combine(DataDirectory, "backups");
+        var name = Path.GetFileNameWithoutExtension(fileName);
+        if (!Directory.Exists(directory))
+        {
+            return new List<string>();
+        }
+
+        try
+        {
+            return Directory.GetFiles(directory, $"{name}_*.json")
+                .OrderByDescending(File.GetLastWriteTime)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[AppStorage] 读取备份列表失败：{ex.Message}");
+            return new List<string>();
+        }
+    }
+
+    /// <summary>
+    /// 用某个备份覆盖当前数据文件（覆盖前会先自动备份当前文件）。
+    /// </summary>
+    public static void RestoreBackup(string backupPath, string fileName)
+    {
+        var target = GetPath(fileName);
+        BackupFile(fileName, TimeSpan.Zero);
+        lock (WriteLock)
+        {
+            EnsureDataDirectory();
+            File.Copy(backupPath, target, true);
+        }
+    }
+
     private static void TryMigrateLegacyDirectory(string target)
     {
         if (Directory.Exists(target))

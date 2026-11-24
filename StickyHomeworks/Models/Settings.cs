@@ -1,9 +1,11 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using MaterialDesignColors;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Text.Json.Serialization;
 using System.Windows.Media;
+using Microsoft.Win32;
 using WindowsShortcutFactory;
 using File = System.IO.File;
 
@@ -13,9 +15,10 @@ public class Settings : ObservableRecipient
 {
     private int _selectedPlatteIndex = 0;
     private int _theme = 0;
-    private Color _primaryColor = Color.FromRgb(34, 209, 236);
-    private Color _secondaryColor  = Color.FromRgb(34, 209, 236);
-    private int _colorSource = 1;
+    /// <summary>默认主题色：蓝色。</summary>
+    private Color _primaryColor = Color.FromRgb(37, 99, 235);
+    private Color _secondaryColor = Color.FromRgb(59, 130, 246);
+    private int _colorSource = 0;
     private ObservableCollection<Color> _wallpaperColorPlatte = new();
     private bool _isWallpaperAutoUpdateEnabled = false;
     private int _wallpaperAutoUpdateIntervalSeconds = 60;
@@ -39,8 +42,7 @@ public class Settings : ObservableRecipient
     private ObservableCollection<Color> _savedColors = new();
 
     public double WindowX
-    {
-        get => _windowX;
+    {        get => _windowX;
         set
         {
             if (value == _windowX) return;
@@ -86,25 +88,95 @@ public class Settings : ObservableRecipient
 
     private const string ShortcutFileName = "StickyHomeworks3.lnk";
 
+    private const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
+
+    private const string RunValueName = "StickyHomeworks3";
+
     private static readonly string[] LegacyShortcutFileNames = { "StickyHomeworks.lnk" };
 
+    private static string? ExecutablePath =>
+        Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule?.FileName;
+
+    private static string StartupShortcutPath =>
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), ShortcutFileName);
+
+    private static bool RunKeyExists()
+    {
+        try
+        {
+            using var key = Registry.CurrentUser.OpenSubKey(RunKeyPath);
+            return key?.GetValue(RunValueName) is string value && value.Length > 0;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
+    private static void SetRunKey(bool enabled)
+    {
+        using var key = Registry.CurrentUser.CreateSubKey(RunKeyPath);
+        if (key == null)
+        {
+            throw new InvalidOperationException("无法打开注册表 Run 项。");
+        }
+
+        if (enabled)
+        {
+            var exe = ExecutablePath;
+            if (string.IsNullOrWhiteSpace(exe))
+            {
+                throw new InvalidOperationException("无法获取程序路径。");
+            }
+
+            key.SetValue(RunValueName, $"\"{exe}\"");
+        }
+        else if (key.GetValue(RunValueName) != null)
+        {
+            key.DeleteValue(RunValueName, false);
+        }
+    }
+
+    /// <summary>
+    /// 是否开机自启。
+    /// <para>
+    /// 优先在“启动”文件夹创建快捷方式；如果该目录不可写（权限/安全软件/策略限制），
+    /// 自动回退到 <c>HKCU\Software\Microsoft\Windows\CurrentVersion\Run</c>。
+    /// 两者只要有一个生效就视为已启用。
+    /// </para>
+    /// </summary>
     public bool IsAutoStartEnabled
     {
-        get => File.Exists(
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), ShortcutFileName));
+        get => File.Exists(StartupShortcutPath) || RunKeyExists();
         set
         {
             var startup = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
-            var path = Path.Combine(startup, ShortcutFileName);
+            var path = StartupShortcutPath;
             try
             {
                 if (value)
                 {
-                    using var shortcut = new WindowsShortcut();
-                    shortcut.Path = Environment.ProcessPath;
-                    // 工作目录固定为程序目录，避免从不同工作目录启动时读写到不同的数据文件
-                    shortcut.WorkingDirectory = AppContext.BaseDirectory;
-                    shortcut.Save(path);
+                    var created = false;
+                    try
+                    {
+                        using var shortcut = new WindowsShortcut();
+                        shortcut.Path = ExecutablePath;
+                        // 工作目录固定为程序目录，避免从不同工作目录启动时读写到不同的数据文件
+                        shortcut.WorkingDirectory = AppContext.BaseDirectory;
+                        shortcut.Save(path);
+                        created = File.Exists(path);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"[Settings] 创建启动快捷方式失败：{ex.Message}");
+                    }
+
+                    if (!created)
+                    {
+                        // 启动目录不可写时回退到注册表 Run 项
+                        SetRunKey(true);
+                        Debug.WriteLine("[Settings] 已改用注册表 Run 项实现开机自启。");
+                    }
 
                     // 清掉旧版本留下的自启动快捷方式，避免同时启动两个实例
                     foreach (var legacyName in LegacyShortcutFileNames)
@@ -118,7 +190,13 @@ public class Settings : ObservableRecipient
                 }
                 else
                 {
-                    File.Delete(path);
+                    if (File.Exists(path))
+                    {
+                        File.Delete(path);
+                    }
+
+                    SetRunKey(false);
+
                     foreach (var legacyName in LegacyShortcutFileNames)
                     {
                         var legacyPath = Path.Combine(startup, legacyName);
@@ -128,11 +206,15 @@ public class Settings : ObservableRecipient
                         }
                     }
                 }
-                OnPropertyChanged();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // ignored
+                Debug.WriteLine($"[Settings] 设置开机自启失败：{ex.Message}");
+            }
+            finally
+            {
+                // 无论成功与否都刷新一次，让开关显示真实状态
+                OnPropertyChanged(nameof(IsAutoStartEnabled));
             }
         }
     }
@@ -400,5 +482,37 @@ public class Settings : ObservableRecipient
             _savedColors = value;
             OnPropertyChanged();
         }
+    }
+
+    /// <summary>
+    /// 修正历史配置里的非法值。旧版本会把主题色的透明度写成 0（完全透明），
+    /// 导致标题栏、强调色显示异常，这里统一补成不透明。
+    /// </summary>
+    public void Normalize()
+    {
+        if (PrimaryColor.A != 255)
+        {
+            PrimaryColor = Color.FromArgb(255, PrimaryColor.R, PrimaryColor.G, PrimaryColor.B);
+        }
+
+        if (SecondaryColor.A != 255)
+        {
+            SecondaryColor = Color.FromArgb(255, SecondaryColor.R, SecondaryColor.G, SecondaryColor.B);
+        }
+
+        if (string.IsNullOrWhiteSpace(Title))
+        {
+            Title = "作业";
+        }
+    }
+
+    /// <summary>
+    /// 把主题恢复为默认蓝色。
+    /// </summary>
+    public void ResetThemeToBlue()
+    {
+        ColorSource = 0;
+        PrimaryColor = Color.FromRgb(37, 99, 235);
+        SecondaryColor = Color.FromRgb(59, 130, 246);
     }
 }

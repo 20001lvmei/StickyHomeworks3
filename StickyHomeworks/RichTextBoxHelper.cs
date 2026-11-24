@@ -216,6 +216,27 @@ public static class RichTextBoxHelper
         return true;
     }
 
+    /// <summary>
+    /// 取出作业内容中的纯文本（去掉 XAML 标签），用于判断内容是否为空。
+    /// </summary>
+    public static string GetPlainText(string? xaml)
+    {
+        if (string.IsNullOrWhiteSpace(xaml))
+        {
+            return string.Empty;
+        }
+
+        try
+        {
+            var document = ConvertDocument(xaml);
+            return new TextRange(document.ContentStart, document.ContentEnd).Text.Trim();
+        }
+        catch (Exception)
+        {
+            return xaml.Trim();
+        }
+    }
+
     private static FlowDocument CreateEmptyDocument()
     {
         var document = new FlowDocument { IsOptimalParagraphEnabled = true };

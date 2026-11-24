@@ -37,6 +37,7 @@ public class SettingsService : ObservableRecipient, IHostedService
         _saveTimer.Stop();
 
         Settings = AppStorage.Load<Settings>(SettingsFileName) ?? new Settings();
+        Settings.Normalize();
 
         applicationLifetime.ApplicationStopping.Register(Flush);
     }

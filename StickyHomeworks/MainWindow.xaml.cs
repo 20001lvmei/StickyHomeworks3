@@ -102,6 +102,16 @@ public partial class MainWindow : Window
         if (ViewModel.IsCreatingMode)
         {
             ViewModel.IsCreatingMode = false;
+
+            // 新建后什么也没填，就不要留下一条空作业
+            var editing = ViewModel.EditingHomework;
+            if (editing != null &&
+                string.IsNullOrWhiteSpace(RichTextBoxHelper.GetPlainText(editing.Content)) &&
+                editing.Tags.Count == 0)
+            {
+                ProfileService.Profile.Homeworks.Remove(editing);
+                ProfileService.SaveProfile();
+            }
             return;
         }
         if (hard)
@@ -134,6 +144,9 @@ public partial class MainWindow : Window
 
     protected override void OnInitialized(EventArgs e)
     {
+        // 默认不保留空白作业：内容为空且没有标签的条目直接去掉
+        RemoveEmptyHomeworks();
+
         // 过期作业不再直接删除，而是归档到 Profile.ArchivedHomeworks 中并保存，避免重启后数据丢失
         ViewModel.ArchivedHomeworks = ProfileService.ArchiveOutdated(SettingsService.Settings.IsAutoArchiveEnabled);
         UpdateArchivedHomeworkState();
@@ -143,6 +156,26 @@ public partial class MainWindow : Window
                 "恢复", (o) => { RestoreArchivedHomework(); }, null, false, false, TimeSpan.FromSeconds(30));
         }
         base.OnInitialized(e);
+    }
+
+    /// <summary>
+    /// 去掉内容为空、也没有标签的作业（例如新建后没填就关掉了）。
+    /// </summary>
+    private void RemoveEmptyHomeworks()
+    {
+        var empty = ProfileService.Profile.Homeworks
+            .Where(h => string.IsNullOrWhiteSpace(RichTextBoxHelper.GetPlainText(h.Content)) && h.Tags.Count == 0)
+            .ToList();
+
+        foreach (var homework in empty)
+        {
+            ProfileService.Profile.Homeworks.Remove(homework);
+        }
+
+        if (empty.Count > 0)
+        {
+            ProfileService.SaveProfile();
+        }
     }
 
     private void UpdateArchivedHomeworkState()
@@ -352,6 +385,26 @@ public partial class MainWindow : Window
         }
         var hWnd = new WindowInteropHelper(this).Handle;
         NativeWindowHelper.SetWindowPos(hWnd, NativeWindowHelper.HWND_BOTTOM, 0, 0, 0, 0, NativeWindowHelper.SWP_NOSIZE | NativeWindowHelper.SWP_NOMOVE | NativeWindowHelper.SWP_NOACTIVATE);
+    }
+
+    /// <summary>
+    /// 冻结/解冻窗口：冻结后窗口固定在桌面底层，不会遮挡其它程序。
+    /// </summary>
+    private void ButtonFreeze_OnClick(object sender, RoutedEventArgs e)
+    {
+        SettingsService.Settings.IsBottom = !SettingsService.Settings.IsBottom;
+        var hWnd = new WindowInteropHelper(this).Handle;
+        if (SettingsService.Settings.IsBottom)
+        {
+            SetBottom();
+            ViewModel.SnackbarMessageQueue.Enqueue("窗口已冻结（置底）。");
+        }
+        else
+        {
+            NativeWindowHelper.SetWindowPos(hWnd, NativeWindowHelper.HWND_TOP, 0, 0, 0, 0,
+                NativeWindowHelper.SWP_NOSIZE | NativeWindowHelper.SWP_NOMOVE | NativeWindowHelper.SWP_NOACTIVATE);
+            ViewModel.SnackbarMessageQueue.Enqueue("窗口已解冻。");
+        }
     }
 
     private void MainWindow_OnStateChanged(object? sender, EventArgs e)

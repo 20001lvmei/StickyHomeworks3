@@ -64,6 +64,7 @@ public static class NativeWindowHelper
     public const UInt32 SWP_NOMOVE = 0x0002;
     public const UInt32 SWP_NOACTIVATE = 0x0010;
     public static readonly IntPtr HWND_BOTTOM = new IntPtr(1);
+    public static readonly IntPtr HWND_TOP = IntPtr.Zero;
 
     public const int GWL_STYLE = -16;
     public const int WS_SYSMENU = 0x80000;

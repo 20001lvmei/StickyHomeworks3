@@ -153,6 +153,8 @@ public class ProfileService : IHostedService, INotifyPropertyChanged
             try
             {
                 AppStorage.Save(ProfileFileName, Profile);
+                // 定期留一份备份，误删/写坏时可以找回（时间机器）
+                AppStorage.BackupFile(ProfileFileName);
                 ProfileSaved?.Invoke(this, EventArgs.Empty);
             }
             catch (Exception ex)

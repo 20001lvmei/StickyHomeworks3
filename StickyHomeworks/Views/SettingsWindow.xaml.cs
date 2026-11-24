@@ -118,6 +118,18 @@ public partial class SettingsWindow : MyWindow
         OpenUrl("https://github.com/20001lvmei/StickyHomeworks3/issues");
     }
 
+    private void ButtonRestoreTheme_OnClick(object sender, RoutedEventArgs e)
+    {
+        Settings.ResetThemeToBlue();
+        AppEx.GetService<SettingsService>().SaveSettings();
+    }
+
+    private void Hyperlink_OnRequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs e)
+    {
+        OpenUrl(e.Uri.AbsoluteUri);
+        e.Handled = true;
+    }
+
     private static void OpenUrl(string url)
     {
         try

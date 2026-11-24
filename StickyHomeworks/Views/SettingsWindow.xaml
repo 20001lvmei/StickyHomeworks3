@@ -102,8 +102,17 @@
                     </DataTemplate>
                 </ListView.ItemTemplate>
                 <models:ContributionMember
+                    AvatarImage="/Assets/Contributiors/20001lvmei@64w.png"
+                    Name="20001lvmei" Description="当前维护者" />
+                <models:ContributionMember
+                    AvatarImage="/Assets/Contributiors/wac123@64w.png"
+                    Name="wac123" Description="前开发者，早期功能与界面" />
+                <models:ContributionMember
                     AvatarImage="/Assets/Contributiors/HelloWRC@64w.jpg"
-                    Name="HelloWRC" Description="软件作者，写代码巨水（划掉）" />
+                    Name="HelloWRC" Description="StickyHomeworks 原作者" />
+                <models:ContributionMember
+                    AvatarImage="/Assets/Contributiors/deepseek@64w.png"
+                    Name="DeepSeek" Description="AI 协助开发（代码修复与功能实现）" />
             </ListView>
         </Grid>
 
@@ -642,14 +651,14 @@
                                             关于本应用
                                         </Paragraph>
                                         <Paragraph>
-                                            注意！本应用处于早期开发阶段！大部分功能尚不完善，或存在bug，可能会在后期的版本中完善或修复。饼要一个一个画，功能要一个一个实现（
+                                            注意！本应用处于早期开发阶段！大部分功能尚不完善，或存在bug，可能会在后期的版本中完善或修复。
                                         </Paragraph>
                                         <Paragraph>
-                                            别看了，没做完。
+                                            StickyHomeworks3 是一款支持富文本的桌面作业贴工具：把作业贴在桌面上，按科目分组、支持富文本与标签，并可自动归档过期作业。
                                         </Paragraph>
                                         <Paragraph Style="{StaticResource MarkdownHeadline2Style}"
                                                    LineHeight="2">
-                                            鸣谢：
+                                            开发与致谢
                                         </Paragraph>
                                         <Paragraph>
                                             <Button HorizontalAlignment="Left" Margin="6"
@@ -663,7 +672,15 @@
                                                 <ely:IconText Kind="PackageVariant" Text="第三方库" />
                                             </Button></Paragraph>
                                         <Paragraph>
-                                            Work In Progress
+                                            本应用基于 <Hyperlink NavigateUri="https://github.com/HelloWRC/StickyHomeworks"
+                                                                  RequestNavigate="Hyperlink_OnRequestNavigate">HelloWRC/StickyHomeworks</Hyperlink>（GPLv3）修改；由 wac123 完成早期版本，现由 20001lvmei 维护，DeepSeek 参与代码修复与功能实现。
+                                        </Paragraph>
+                                        <Paragraph>
+                                            <Button HorizontalAlignment="Left" Margin="6"
+                                                    Style="{StaticResource MaterialDesignFlatButton}"
+                                                    Click="ButtonRestoreTheme_OnClick">
+                                                <ely:IconText Kind="PaletteOutline" Text="恢复默认蓝色主题" />
+                                            </Button>
                                         </Paragraph>
 
                                         <Paragraph Foreground="#fff7d1ec">

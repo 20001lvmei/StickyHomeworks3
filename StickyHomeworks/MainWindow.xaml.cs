@@ -25,6 +25,7 @@ using System.Windows.Forms;
 using System.Windows.Threading;
 using DataFormats = System.Windows.DataFormats;
 using DragEventArgs = System.Windows.DragEventArgs;
+using Path = System.IO.Path;
 
 namespace StickyHomeworks;
 
@@ -553,63 +554,121 @@ public partial class MainWindow : Window
 
     private async void ButtonExport_OnClick(object sender, RoutedEventArgs e)
     {
-        ViewModel.IsWorking = true;
-        var dialog = new System.Windows.Forms.SaveFileDialog()
-        {
-            Filter = "图片 (*.png)|*.png"
-        };
-        if (dialog.ShowDialog() != System.Windows.Forms.DialogResult.OK)
-        {
-            goto done;
-        }
-
-        ExitEditingMode();
-        //MainListView.Background = (Brush)FindResource("MaterialDesignPaper");
-        await System.Windows.Threading.Dispatcher.Yield(DispatcherPriority.Render);
-        var file = dialog.FileName!;
-        var visual = new DrawingVisual();
-        var s = SettingsService.Settings.Scale;
-        using (var context = visual.RenderOpen())
-        {
-            var brush = new VisualBrush(MainListView)
-            {
-                Stretch = Stretch.None
-            };
-            var bg = (Brush)FindResource("MaterialDesignPaper");
-            context.DrawRectangle(bg, null, new Rect(0, 0, MainListView.ActualWidth * s, MainListView.ActualHeight * s)); 
-            context.DrawRectangle(brush, null, new Rect(0, 0, MainListView.ActualWidth * s, MainListView.ActualHeight * s));
-            context.Close();
-        }
-
-        var bitmap = new RenderTargetBitmap((int)(MainListView.ActualWidth * s), (int)(ActualHeight * s), 96d, 96d,
-            PixelFormats.Default);
-        bitmap.Render(visual);
-        var encoder = new PngBitmapEncoder();
-        encoder.Frames.Add(BitmapFrame.Create(bitmap));
+        var pictures = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), "StickyHomeworks3");
         try
         {
-            var stream = File.Open(file, FileMode.OpenOrCreate);
-            encoder.Save(stream);
-            stream.Close();
-            ViewModel.SnackbarMessageQueue.Enqueue($"成功地导出到：{file}", "查看", () =>
-            {
-                Process.Start(new ProcessStartInfo()
-                {
-                    FileName = file,
-                    UseShellExecute = true
-                });
-            });
-
+            Directory.CreateDirectory(pictures);
         }
-        catch(Exception ex)
+        catch (Exception)
         {
-            ViewModel.SnackbarMessageQueue.Enqueue($"导出失败：{ex}");
+            pictures = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
         }
 
-        done:
-        //MainListView.Background = null;
-        dialog.Dispose();
-        ViewModel.IsWorking = false;
+        using var dialog = new System.Windows.Forms.SaveFileDialog
+        {
+            Filter = "图片 (*.png)|*.png",
+            DefaultExt = "png",
+            AddExtension = true,
+            OverwritePrompt = true,
+            InitialDirectory = pictures,
+            FileName = $"作业_{DateTime.Now:yyyyMMdd_HHmm}.png"
+        };
+
+        if (dialog.ShowDialog() != System.Windows.Forms.DialogResult.OK)
+        {
+            return;
+        }
+
+        ViewModel.IsWorking = true;
+        try
+        {
+            ExitEditingMode();
+            await Dispatcher.Yield(DispatcherPriority.Render);
+
+            var png = RenderHomeworkListToPng();
+            var file = dialog.FileName;
+
+            try
+            {
+                File.WriteAllBytes(file, png);
+            }
+            catch (Exception ex) when (ex is UnauthorizedAccessException or IOException)
+            {
+                // 目标目录不可写（常见于 Windows“受控文件夹访问”拦截，或选了系统目录）
+                var fallback = Path.Combine(pictures, Path.GetFileName(file));
+                try
+                {
+                    File.WriteAllBytes(fallback, png);
+                    ViewModel.SnackbarMessageQueue.Enqueue(
+                        $"没有权限写入该位置，已改为保存到：{fallback}", "查看", () => OpenPath(fallback));
+                    return;
+                }
+                catch (Exception fallbackEx)
+                {
+                    ViewModel.SnackbarMessageQueue.Enqueue(
+                        $"保存失败：没有写入权限。请换一个目录（如 D:\\ 或桌面），" +
+                        $"或在 Windows 安全中心 → 病毒和威胁防护 → 受控文件夹访问 中允许本程序。{fallbackEx.Message}");
+                    Debug.WriteLine($"[Export] 保存失败：{ex.Message}");
+                    return;
+                }
+            }
+
+            ViewModel.SnackbarMessageQueue.Enqueue($"已导出到：{file}", "查看", () => OpenPath(file));
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[Export] 导出失败：{ex}");
+            ViewModel.SnackbarMessageQueue.Enqueue($"导出失败：{ex.Message}");
+        }
+        finally
+        {
+            ViewModel.IsWorking = false;
+        }
+    }
+
+    /// <summary>
+    /// 把作业列表渲染成 PNG 字节。
+    /// </summary>
+    private byte[] RenderHomeworkListToPng()
+    {
+        var scale = SettingsService.Settings.Scale;
+        var width = Math.Max(1, MainListView.ActualWidth);
+        var height = Math.Max(1, MainListView.ActualHeight);
+
+        var visual = new DrawingVisual();
+        using (var context = visual.RenderOpen())
+        {
+            var brush = new VisualBrush(MainListView) { Stretch = Stretch.None };
+            var background = (Brush)FindResource("MaterialDesignPaper");
+            var rect = new Rect(0, 0, width * scale, height * scale);
+            context.DrawRectangle(background, null, rect);
+            context.DrawRectangle(brush, null, rect);
+        }
+
+        var bitmap = new RenderTargetBitmap(
+            (int)Math.Ceiling(width * scale),
+            (int)Math.Ceiling(height * scale),
+            96d, 96d, PixelFormats.Default);
+        bitmap.Render(visual);
+
+        var encoder = new PngBitmapEncoder();
+        encoder.Frames.Add(BitmapFrame.Create(bitmap));
+        using var stream = new MemoryStream();
+        encoder.Save(stream);
+        return stream.ToArray();
+    }
+
+    private static void OpenPath(string path)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo { FileName = path, UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[Export] 打开文件失败：{ex.Message}");
+        }
     }
 
     private void DrawerHost_OnDrawerClosing(object? sender, DrawerClosingEventArgs e)

@@ -4,7 +4,7 @@
         Title="StickyHomeworks3" Height="600" Width="540"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
-        ShowInTaskbar="True"
+        ShowInTaskbar="False"
         Icon="/Assets/AppLogo.ico"
         FontFamily="Microsoft YaHei UI"
         Background="#FFF7FAFF">

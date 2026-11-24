@@ -18,6 +18,7 @@
                    TextOptions.TextRenderingMode="Auto"   
                    Title="应用设置" Height="550" Width="1200"
                    Icon="/Assets/AppLogo.ico"
+                   ShowInTaskbar="False"
                    MinWidth="600"
                    Closing="SettingsWindow_OnClosing"
                    FrameworkElement.FocusVisualStyle="{StaticResource {x:Static SystemParameters.FocusVisualStyleKey}}"
@@ -745,7 +746,6 @@
                                 </TextBlock>
 
                                 <MenuItem Icon="{materialDesign:PackIcon BugOutline}" Header="崩溃测试" Click="ButtonCrash_OnClick"/>
-                                <MenuItem IsCheckable="True" IsChecked="{Binding Settings.IsDebugShowInTaskBar}" Header="在任务栏显示图标"/>
                                 <MenuItem Icon="{materialDesign:PackIcon LightningBoltOutline}" Header="测试作业编辑窗口" Click="MenuItemTestHomeworkEditWindow_OnClick"/>
                                 <RichTextBox>
                                     <FlowDocument IsHyphenationEnabled="False"

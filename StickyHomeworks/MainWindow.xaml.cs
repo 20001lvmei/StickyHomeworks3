@@ -264,8 +264,17 @@ public partial class MainWindow : Window
     {
         SetBottom();
         SetPos();
-        AppEx.GetService<HomeworkEditWindow>().EditingFinished += OnEditingFinished;
-        AppEx.GetService<HomeworkEditWindow>().SubjectChanged += OnSubjectChanged;
+        var editor = AppEx.GetService<HomeworkEditWindow>();
+        editor.EditingFinished += OnEditingFinished;
+        editor.SubjectChanged += OnSubjectChanged;
+        // 编辑窗口内容变化导致高度变化时，重新夹回屏幕内
+        editor.SizeChanged += (_, _) =>
+        {
+            if (editor.IsOpened)
+            {
+                RepositionEditingWindow();
+            }
+        };
         base.OnContentRendered(e);
     }
 
@@ -318,8 +327,7 @@ public partial class MainWindow : Window
         SettingsService.SaveSettings();
         ProfileService.SaveProfile();
         ViewModel.IsUpdatingHomeworkSubject = false;
-        RepositionEditingWindow();
-        AppEx.GetService<HomeworkEditWindow>().TryOpen();
+        ShowHomeworkEditor();
     }
 
     private void ButtonAddHomeworkCompleted_OnClick(object sender, RoutedEventArgs e)
@@ -403,28 +411,66 @@ public partial class MainWindow : Window
             return;
         ViewModel.EditingHomework = ViewModel.SelectedHomework;
         ViewModel.IsDrawerOpened = true;
-        RepositionEditingWindow();
-        AppEx.GetService<HomeworkEditWindow>().TryOpen();
+        ShowHomeworkEditor();
     }
 
+    /// <summary>
+    /// 把作业编辑窗口摆到选中项旁边，并保证整窗都在屏幕内。
+    /// </summary>
     private void RepositionEditingWindow()
     {
-        if (ViewModel.SelectedListBoxItem == null) 
+        if (ViewModel.SelectedListBoxItem == null)
+        {
             return;
-        Debug.WriteLine("selected changed");
+        }
+
         try
         {
             GetCurrentDpi(out var dpiX, out var dpiY);
-            var p = ViewModel.SelectedListBoxItem.PointToScreen(new Point(ViewModel.SelectedListBoxItem.ActualWidth, 0));
-            var screen = Screen.PrimaryScreen!.WorkingArea;
+            if (dpiX <= 0 || double.IsNaN(dpiX)) dpiX = 1;
+            if (dpiY <= 0 || double.IsNaN(dpiY)) dpiY = 1;
+
+            var item = ViewModel.SelectedListBoxItem;
+            var anchor = item.PointToScreen(new Point(item.ActualWidth, 0));
             var homeworkEditWindow = AppEx.GetService<HomeworkEditWindow>();
-            homeworkEditWindow.Left = p.X / dpiX;
-            homeworkEditWindow.Top = Math.Min(p.Y, screen.Bottom - homeworkEditWindow.ActualHeight * dpiY) / dpiY;
+
+            // 用选中项所在的那块屏幕（支持多显示器），并换算成 WPF 的 DIP
+            var work = Screen.FromPoint(new System.Drawing.Point((int)anchor.X, (int)anchor.Y)).WorkingArea;
+            var workLeft = work.Left / dpiX;
+            var workTop = work.Top / dpiY;
+            var workRight = work.Right / dpiX;
+            var workBottom = work.Bottom / dpiY;
+
+            var width = homeworkEditWindow.ActualWidth > 1 ? homeworkEditWindow.ActualWidth : homeworkEditWindow.Width;
+            var height = homeworkEditWindow.ActualHeight > 1 ? homeworkEditWindow.ActualHeight : 420;
+            if (double.IsNaN(width) || width <= 1) width = 320;
+            if (double.IsNaN(height) || height <= 1) height = 420;
+
+            var left = anchor.X / dpiX;
+            var top = anchor.Y / dpiY;
+
+            // 夹进工作区：放不下就贴右边/底边，不会跑到屏幕外
+            left = Math.Clamp(left, workLeft, Math.Max(workLeft, workRight - width));
+            top = Math.Clamp(top, workTop, Math.Max(workTop, workBottom - height));
+
+            homeworkEditWindow.Left = left;
+            homeworkEditWindow.Top = top;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // ignored
+            Debug.WriteLine($"[MainWindow] 定位编辑窗口失败：{ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// 打开作业编辑窗口：先定位，等布局完成后再校正一次，避免首帧尺寸为 0 导致越界。
+    /// </summary>
+    private void ShowHomeworkEditor()
+    {
+        var window = AppEx.GetService<HomeworkEditWindow>();
+        RepositionEditingWindow();
+        window.TryOpen();
+        Dispatcher.BeginInvoke(new Action(RepositionEditingWindow), DispatcherPriority.Loaded);
     }
 
     private void ButtonRemoveHomework_OnClick(object sender, RoutedEventArgs e)

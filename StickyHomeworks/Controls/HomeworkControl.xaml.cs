@@ -61,9 +61,152 @@ public partial class HomeworkControl : UserControl
         set { SetValue(IsEditingProperty, value); }
     }
 
+    /// <summary>
+    /// 作业在自己的科目分组里的序号（从 1 开始），显示在内容前面。
+    /// </summary>
+    public static readonly DependencyProperty NumberProperty = DependencyProperty.Register(
+        nameof(Number), typeof(int), typeof(HomeworkControl), new PropertyMetadata(0));
+
+    public int Number
+    {
+        get { return (int)GetValue(NumberProperty); }
+        set { SetValue(NumberProperty, value); }
+    }
+
     public HomeworkControl()
     {
         InitializeComponent();
+        Loaded += (_, _) =>
+        {
+            RefreshNumber();
+            UpdateReadOnly();
+            HookFrozenChanged();
+        };
+        LayoutUpdated += (_, _) => RefreshNumber();
+        Unloaded += (_, _) => UnhookFrozenChanged();
+    }
+
+    /// <summary>
+    /// 选中且没冻结时可直接编辑，否则只读。
+    /// </summary>
+    private void UpdateReadOnly()
+    {
+        var frozen = false;
+        try
+        {
+            frozen = AppEx.GetService<StickyHomeworks.Services.SettingsService>().Settings.IsFrozen;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[HomeworkControl] 读取冻结状态失败：{ex.Message}");
+        }
+
+        var readOnly = !(IsSelected && !frozen);
+        if (RichTextBox.IsReadOnly != readOnly)
+        {
+            RichTextBox.IsReadOnly = readOnly;
+        }
+
+#if DEBUG
+        if (Environment.GetEnvironmentVariable("STICKYHOMEWORKS3_SELFTEST") == "1")
+        {
+            try
+            {
+                System.IO.File.AppendAllText(
+                    System.IO.Path.Combine(StickyHomeworks.Services.AppStorage.DataDirectory, "selftest.log"),
+                    $"control selected={IsSelected} frozen={frozen} readOnly={readOnly}{Environment.NewLine}");
+            }
+            catch
+            {
+                // 自测日志失败不影响功能
+            }
+        }
+#endif
+    }
+
+    private StickyHomeworks.Services.SettingsService? _settingsService;
+
+    private void HookFrozenChanged()
+    {
+        if (_settingsService != null)
+        {
+            return;
+        }
+
+        try
+        {
+            _settingsService = AppEx.GetService<StickyHomeworks.Services.SettingsService>();
+            _settingsService.Settings.PropertyChanged += OnSettingsPropertyChanged;
+            UpdateReadOnly();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[HomeworkControl] 监听冻结状态失败：{ex.Message}");
+        }
+    }
+
+    private void UnhookFrozenChanged()
+    {
+        if (_settingsService == null)
+        {
+            return;
+        }
+
+        _settingsService.Settings.PropertyChanged -= OnSettingsPropertyChanged;
+        _settingsService = null;
+    }
+
+    private void OnSettingsPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(StickyHomeworks.Models.Settings.IsFrozen))
+        {
+            UpdateReadOnly();
+        }
+    }
+
+    /// <summary>
+    /// 按所在分组面板里的位置算出序号（每个科目从 1 开始）。
+    /// </summary>
+    private void RefreshNumber()
+    {
+        try
+        {
+            var item = FindAncestor<ListBoxItem>(this);
+            if (item == null)
+            {
+                return;
+            }
+
+            var panel = item.Parent as Panel ?? VisualTreeHelper.GetParent(item) as Panel;
+            if (panel == null)
+            {
+                return;
+            }
+
+            var index = 0;
+            foreach (UIElement child in panel.Children)
+            {
+                if (ReferenceEquals(child, item))
+                {
+                    break;
+                }
+
+                if (child is ListBoxItem)
+                {
+                    index++;
+                }
+            }
+
+            var number = index + 1;
+            if (Number != number)
+            {
+                Number = number;
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[HomeworkControl] 计算序号失败：{ex.Message}");
+        }
     }
 
     private void IsEditingChanged(bool value)
@@ -87,10 +230,9 @@ public partial class HomeworkControl : UserControl
 
     private void IsSelectedChanged(bool value)
     {
-        Debug.WriteLine($"IsSelected changed! {value} {IsEditing}");
+        UpdateReadOnly();
         if (value && IsEditing)
         {
-            Debug.WriteLine("RelatedRichTextBox updated because IsSelected changed");
             EnterEdit();
         }
     }
@@ -104,8 +246,8 @@ public partial class HomeworkControl : UserControl
     }
 
     /// <summary>
-    /// 没选中时点文字先选中整条作业（否则富文本框会吃掉这次点击）；
-    /// 已选中时把点击交给文档处理，这样里面的链接可以点开。
+    /// 点作业内容：选中整条作业，并把这次点击继续交给富文本框，
+    /// 这样不用先点“编辑”就能直接把光标点到文字上开始输入。
     /// </summary>
     private void RichTextBox_OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
@@ -118,7 +260,7 @@ public partial class HomeworkControl : UserControl
         if (item != null)
         {
             item.IsSelected = true;
-            e.Handled = true;
+            // 注意：这里不设置 e.Handled，保留光标定位的能力
         }
     }
 

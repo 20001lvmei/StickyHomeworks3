@@ -284,6 +284,51 @@ public partial class MainWindow : Window
             }
         };
         base.OnContentRendered(e);
+
+#if DEBUG
+        if (Environment.GetEnvironmentVariable("STICKYHOMEWORKS3_SELFTEST") == "1")
+        {
+            Dispatcher.BeginInvoke(new Action(async () =>
+            {
+                await Task.Delay(1200);
+                MainListView.SelectedIndex = 0;
+                await Task.Delay(1500);
+                var lines = new List<string>();
+                foreach (var control in FindVisualChildren<Controls.HomeworkControl>(this))
+                {
+                    var box = control.FindName("RichTextBox") as System.Windows.Controls.RichTextBox;
+                    lines.Add($"selected={control.IsSelected} number={control.Number} readonly={box?.IsReadOnly}");
+                }
+
+                lines.Add($"frozen={SettingsService.Settings.IsFrozen}");
+                File.WriteAllText(Path.Combine(AppStorage.DataDirectory, "selftest.log"),
+                    string.Join(Environment.NewLine, lines));
+            }), DispatcherPriority.Background);
+        }
+#endif
+    }
+
+    private static IEnumerable<T> FindVisualChildren<T>(DependencyObject? root) where T : DependencyObject
+    {
+        if (root == null)
+        {
+            yield break;
+        }
+
+        var count = VisualTreeHelper.GetChildrenCount(root);
+        for (var i = 0; i < count; i++)
+        {
+            var child = VisualTreeHelper.GetChild(root, i);
+            if (child is T match)
+            {
+                yield return match;
+            }
+
+            foreach (var nested in FindVisualChildren<T>(child))
+            {
+                yield return nested;
+            }
+        }
     }
 
     private void OnSubjectChanged(object? sender, EventArgs e)

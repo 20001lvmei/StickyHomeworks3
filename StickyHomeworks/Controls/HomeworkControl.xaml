@@ -51,15 +51,22 @@
     </UserControl.Resources>
     <Grid DataContext="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=local:HomeworkControl}}">
         <DockPanel Margin="0 0">
-            <!-- 序号（原来是圆点），由代码按分组内的位置计算 -->
-            <TextBlock Text="{Binding Number, StringFormat={}{0}.}"
-                       VerticalAlignment="Top"
-                       TextAlignment="Right"
-                       MinWidth="26"
-                       FontSize="20"
-                       FontWeight="Regular"
-                       Foreground="{DynamicResource MaterialDesignBody}"
-                       Margin="0 0 6 0"/>
+            <!-- 列表标记：数字序号或圆点，由设置决定（代码里切换显隐），宽度固定避免内容跳动 -->
+            <Grid Width="30" VerticalAlignment="Top">
+                <TextBlock x:Name="NumberText"
+                           Text="{Binding Number, StringFormat={}{0}.}"
+                           TextAlignment="Right"
+                           FontSize="20"
+                           FontWeight="Regular"
+                           Foreground="{DynamicResource MaterialDesignBody}"
+                           Margin="0 0 6 0"/>
+                <Ellipse x:Name="DotMarker"
+                         Width="6" Height="6"
+                         HorizontalAlignment="Center"
+                         Fill="{DynamicResource MaterialDesignBody}"
+                         Margin="0 12 6 0"
+                         Visibility="Collapsed"/>
+            </Grid>
             <WrapPanel>
                 <emoji:RichTextBox VerticalAlignment="Top"
                                    Padding="0"

@@ -297,7 +297,10 @@ public partial class MainWindow : Window
                 foreach (var control in FindVisualChildren<Controls.HomeworkControl>(this))
                 {
                     var box = control.FindName("RichTextBox") as System.Windows.Controls.RichTextBox;
-                    lines.Add($"selected={control.IsSelected} number={control.Number} readonly={box?.IsReadOnly}");
+                    var numberText = control.FindName("NumberText") as TextBlock;
+                    var dot = control.FindName("DotMarker") as System.Windows.Shapes.Ellipse;
+                    lines.Add($"selected={control.IsSelected} number={control.Number} readonly={box?.IsReadOnly} " +
+                              $"numberVisible={numberText?.Visibility} dotVisible={dot?.Visibility}");
                 }
 
                 lines.Add($"frozen={SettingsService.Settings.IsFrozen}");

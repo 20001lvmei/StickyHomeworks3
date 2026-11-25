@@ -323,6 +323,14 @@
                                                 AutoToolTipPrecision="2" />
                                     </ely:SettingsCard.Switcher>
                                 </ely:SettingsCard>
+                                <!-- 列表标记 -->
+                                <ely:SettingsCard IconGlyph="FormatListNumbered" Header="作业前面的标记"
+                                                       Description="用数字序号（1. 2.）还是圆点。">
+                                    <ely:SettingsCard.Switcher>
+                                        <ToggleButton Style="{StaticResource MaterialDesignSwitchToggleButton}"
+                                                      IsChecked="{Binding Settings.IsNumberedList, Mode=TwoWay}" />
+                                    </ely:SettingsCard.Switcher>
+                                </ely:SettingsCard>
                                 <Separator Margin="0 16 0 8"/>
                                 <ely:IconText Kind="PaletteOutline" Text="主题" Margin="0 0 0 8"/>
                                 <!-- 应用主题 -->

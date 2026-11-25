@@ -147,6 +147,22 @@ public class Settings : ObservableRecipient
         }
     }
 
+    private bool _isNumberedList = true;
+
+    /// <summary>
+    /// 作业前面的标记：true 用数字序号（1. 2.），false 用圆点。
+    /// </summary>
+    public bool IsNumberedList
+    {
+        get => _isNumberedList;
+        set
+        {
+            if (value == _isNumberedList) return;
+            _isNumberedList = value;
+            OnPropertyChanged();
+        }
+    }
+
     public string Title
     {
         get => _title;

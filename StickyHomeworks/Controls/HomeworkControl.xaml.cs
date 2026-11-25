@@ -80,6 +80,7 @@ public partial class HomeworkControl : UserControl
         {
             RefreshNumber();
             UpdateReadOnly();
+            ApplyMarkerStyle();
             HookFrozenChanged();
         };
         LayoutUpdated += (_, _) => RefreshNumber();
@@ -162,6 +163,46 @@ public partial class HomeworkControl : UserControl
         {
             UpdateReadOnly();
         }
+
+        if (e.PropertyName == nameof(StickyHomeworks.Models.Settings.IsNumberedList))
+        {
+            ApplyMarkerStyle();
+        }
+    }
+
+    /// <summary>
+    /// 按设置显示数字序号或圆点。
+    /// </summary>
+    private void ApplyMarkerStyle()
+    {
+        var numbered = true;
+        try
+        {
+            numbered = AppEx.GetService<StickyHomeworks.Services.SettingsService>().Settings.IsNumberedList;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[HomeworkControl] 读取列表标记设置失败：{ex.Message}");
+        }
+
+        NumberText.Visibility = numbered ? Visibility.Visible : Visibility.Collapsed;
+        DotMarker.Visibility = numbered ? Visibility.Collapsed : Visibility.Visible;
+
+#if DEBUG
+        if (Environment.GetEnvironmentVariable("STICKYHOMEWORKS3_SELFTEST") == "1")
+        {
+            try
+            {
+                System.IO.File.AppendAllText(
+                    System.IO.Path.Combine(StickyHomeworks.Services.AppStorage.DataDirectory, "selftest.log"),
+                    $"marker numbered={numbered} numberVisible={NumberText.Visibility} dotVisible={DotMarker.Visibility}{Environment.NewLine}");
+            }
+            catch
+            {
+                // 自测日志失败不影响功能
+            }
+        }
+#endif
     }
 
     /// <summary>

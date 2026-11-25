@@ -27,6 +27,8 @@ public class MainViewModel : ObservableRecipient
     private bool _hasArchivedHomeworks = false;
     private ObservableCollection<BackupEntry> _backups = new();
     private BackupEntry? _selectedBackup;
+    private ObservableCollection<HistoryEntry> _historyEntries = new();
+    private HistoryEntry? _selectedHistoryEntry;
 
     public Control? SelectedListBoxItem
     {
@@ -209,6 +211,31 @@ public class MainViewModel : ObservableRecipient
         {
             if (Equals(value, _selectedBackup)) return;
             _selectedBackup = value;
+            OnPropertyChanged();
+        }
+    }
+
+    /// <summary>
+    /// 作业历史记录。
+    /// </summary>
+    public ObservableCollection<HistoryEntry> HistoryEntries
+    {
+        get => _historyEntries;
+        set
+        {
+            if (Equals(value, _historyEntries)) return;
+            _historyEntries = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public HistoryEntry? SelectedHistoryEntry
+    {
+        get => _selectedHistoryEntry;
+        set
+        {
+            if (Equals(value, _selectedHistoryEntry)) return;
+            _selectedHistoryEntry = value;
             OnPropertyChanged();
         }
     }

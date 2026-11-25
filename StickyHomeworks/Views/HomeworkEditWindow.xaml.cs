@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
@@ -19,6 +21,7 @@ using ElysiaFramework;
 using StickyHomeworks.Models;
 using StickyHomeworks.Services;
 using StickyHomeworks.ViewModels;
+using Path = System.IO.Path;
 
 namespace StickyHomeworks.Views;
 
@@ -257,6 +260,190 @@ public partial class HomeworkEditWindow : Window, INotifyPropertyChanged
             Content = homework.Content
         });
         SettingsService.SaveSettings();
+    }
+
+    private static readonly string[] Emojis =
+    {
+        "😀", "😄", "😁", "😆", "😅", "😂", "🙂", "😉", "😊", "😍",
+        "😘", "😜", "😎", "🤔", "😐", "😴", "😭", "😱", "😡", "🥺",
+        "👍", "👎", "👏", "🙏", "💪", "✌️", "👌", "🤝", "❤️", "💔",
+        "⭐", "🌟", "✨", "🔥", "🎉", "🎁", "📚", "📝", "✏️", "📌",
+        "✅", "❌", "⚠️", "❓", "❗", "💡", "⏰", "☀️", "🌙", "🍀"
+    };
+
+    private Popup? _emojiPopup;
+
+    private void ButtonEmoji_OnClick(object sender, RoutedEventArgs e)
+    {
+        CloseEmojiPopup();
+
+        var panel = new WrapPanel { Width = 280, Background = Brushes.White };
+        var popup = new Popup
+        {
+            StaysOpen = false,
+            AllowsTransparency = true,
+            PlacementTarget = sender as UIElement,
+            Placement = PlacementMode.Bottom
+        };
+
+        foreach (var emoji in Emojis)
+        {
+            var button = new Button
+            {
+                Content = emoji,
+                Width = 32,
+                Height = 32,
+                FontSize = 17,
+                Padding = new Thickness(0),
+                Margin = new Thickness(1),
+                Background = Brushes.Transparent,
+                BorderThickness = new Thickness(0)
+            };
+            button.Click += (_, _) =>
+            {
+                InsertText(emoji);
+                popup.IsOpen = false;
+            };
+            panel.Children.Add(button);
+        }
+
+        popup.Child = new Border
+        {
+            Child = panel,
+            Background = Brushes.White,
+            BorderBrush = new SolidColorBrush(Color.FromRgb(0xE2, 0xE8, 0xF0)),
+            BorderThickness = new Thickness(1)
+        };
+
+        _emojiPopup = popup;
+        popup.IsOpen = true;
+    }
+
+    private void CloseEmojiPopup()
+    {
+        if (_emojiPopup != null)
+        {
+            _emojiPopup.IsOpen = false;
+            _emojiPopup = null;
+        }
+    }
+
+    /// <summary>
+    /// 在光标处插入一段文字。
+    /// </summary>
+    private void InsertText(string text)
+    {
+        try
+        {
+            var caret = RelatedRichTextBox.CaretPosition;
+            caret.InsertTextInRun(text);
+            RelatedRichTextBox.Focus();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[Editor] 插入文字失败：{ex.Message}");
+        }
+    }
+
+    private void ButtonLink_OnClick(object sender, RoutedEventArgs e)
+    {
+        var url = TextPromptWindow.Show(this, "插入链接", "链接地址：", "https://");
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            return;
+        }
+
+        url = url.Trim();
+        var text = TextPromptWindow.Show(this, "插入链接", "显示的文字（留空则直接显示网址）：", url);
+        var display = string.IsNullOrWhiteSpace(text) ? url : text.Trim();
+
+        try
+        {
+            var uri = new Uri(url);
+            var paragraph = RelatedRichTextBox.CaretPosition.Paragraph;
+            if (paragraph == null)
+            {
+                return;
+            }
+
+            var hyperlink = new Hyperlink(new Run(display)) { NavigateUri = uri, ToolTip = url };
+            hyperlink.RequestNavigate += (_, args) =>
+            {
+                OpenUrl(args.Uri.AbsoluteUri);
+                args.Handled = true;
+            };
+            paragraph.Inlines.Add(hyperlink);
+            RelatedRichTextBox.Focus();
+        }
+        catch (UriFormatException)
+        {
+            MessageBox.Show("链接地址格式不对，需要以 http:// 或 https:// 开头。", "插入链接",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+    }
+
+    private void ButtonImage_OnClick(object sender, RoutedEventArgs e)
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "插入图片",
+            Filter = "图片 (*.png;*.jpg;*.jpeg;*.bmp;*.gif)|*.png;*.jpg;*.jpeg;*.bmp;*.gif"
+        };
+
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        try
+        {
+            // 复制到数据目录，避免原图被移动/删除后作业里显示不出来
+            var imageDirectory = Path.Combine(AppStorage.DataDirectory, "images");
+            Directory.CreateDirectory(imageDirectory);
+            var target = Path.Combine(imageDirectory, $"{Guid.NewGuid():N}{Path.GetExtension(dialog.FileName)}");
+            File.Copy(dialog.FileName, target, true);
+
+            var bitmap = new BitmapImage();
+            bitmap.BeginInit();
+            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            bitmap.UriSource = new Uri(target);
+            bitmap.EndInit();
+
+            var image = new Image
+            {
+                Source = bitmap,
+                MaxWidth = 240,
+                MaxHeight = 240,
+                Stretch = Stretch.Uniform
+            };
+
+            var paragraph = RelatedRichTextBox.CaretPosition.Paragraph;
+            if (paragraph == null)
+            {
+                return;
+            }
+
+            paragraph.Inlines.Add(new InlineUIContainer(image));
+            RelatedRichTextBox.Focus();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[Editor] 插入图片失败：{ex}");
+            MessageBox.Show($"插入图片失败：{ex.Message}", "插入图片",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private static void OpenUrl(string url)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo { FileName = url, UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[Editor] 打开链接失败：{ex.Message}");
+        }
     }
 
     private void ButtonEditingDone_OnClick(object sender, RoutedEventArgs e)

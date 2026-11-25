@@ -102,4 +102,25 @@ public partial class HomeworkControl : UserControl
             App.GetService<MainWindow>().OnTextBoxEnter();
         }
     }
+
+    /// <summary>
+    /// 点击作业里的链接时用默认浏览器打开（只读状态下也能点）。
+    /// </summary>
+    private void RichTextBox_OnRequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs e)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = e.Uri.AbsoluteUri,
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[HomeworkControl] 打开链接失败：{ex.Message}");
+        }
+
+        e.Handled = true;
+    }
 }

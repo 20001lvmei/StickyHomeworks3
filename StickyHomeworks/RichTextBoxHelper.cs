@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Documents;
 using System.Windows.Markup;
@@ -24,7 +25,9 @@ public static class RichTextBoxHelper
         "TableCell", "TableColumn", "TableColumnGroup", "Figure", "Floater",
         "InlineUIContainer", "BlockUIContainer",
         "SolidColorBrush", "LinearGradientBrush", "RadialGradientBrush", "GradientStop",
-        "TextDecorationCollection", "TextDecoration", "FontFamily"
+        "TextDecorationCollection", "TextDecoration", "FontFamily",
+        // 作业里插入的图片（图片文件保存在数据目录的 images 文件夹）
+        "Image", "BitmapImage"
     };
 
     /// <summary>
@@ -52,6 +55,9 @@ public static class RichTextBoxHelper
     /// 与 Emoji.Wpf 的元素，避免通过 XAML 实例化任意类型；不合法的内容会退化为纯文本，不会丢数据。
     /// </para>
     /// </summary>
+    /// <summary>最近一次解析失败的异常信息（便于排查）。</summary>
+    public static string? LastError { get; private set; }
+
     public static FlowDocument ConvertDocument(string xaml)
     {
         if (string.IsNullOrWhiteSpace(xaml))
@@ -59,8 +65,13 @@ public static class RichTextBoxHelper
             return CreateEmptyDocument();
         }
 
+        // XamlWriter 保存时会把 InlineUIContainer 拍平，只剩 <Image/>，
+        // 直接解析会因为“不能把 UIElement 直接放进段落”而失败，这里补回容器。
+        xaml = NormalizeInlineUiContainers(xaml);
+
         if (!IsSafeDocumentXaml(xaml))
         {
+            LastError ??= "validation-failed";
             Debug.WriteLine("[RichTextBoxHelper] 作业内容包含不被允许的 XAML，已按纯文本显示。");
             return CreatePlainTextDocument(xaml);
         }
@@ -75,6 +86,7 @@ public static class RichTextBoxHelper
         }
         catch (Exception ex)
         {
+            LastError = ex.ToString();
             Debug.WriteLine($"[RichTextBoxHelper] 解析作业内容失败：{ex.Message}");
             return CreatePlainTextDocument(xaml);
         }
@@ -116,13 +128,20 @@ public static class RichTextBoxHelper
                 }
 
                 depth++;
+                if (reader.IsEmptyElement)
+                {
+                    // 空元素不会有 EndElement
+                    depth--;
+                }
                 if (depth > MaxDepth)
                 {
+                    LastError = "depth:" + depth;
                     return false;
                 }
 
                 if (!IsAllowedElement(reader.NamespaceURI, reader.LocalName))
                 {
+                    LastError = "element:" + reader.LocalName + " ns=" + reader.NamespaceURI;
                     return false;
                 }
 
@@ -132,6 +151,7 @@ public static class RichTextBoxHelper
                     if (!string.Equals(reader.LocalName, "FlowDocument", StringComparison.OrdinalIgnoreCase) ||
                         !string.Equals(reader.NamespaceURI, PresentationNamespace, StringComparison.OrdinalIgnoreCase))
                     {
+                        LastError = "root:" + reader.LocalName + " ns=" + reader.NamespaceURI;
                         return false;
                     }
 
@@ -196,6 +216,7 @@ public static class RichTextBoxHelper
                 if (string.Equals(reader.Prefix, "x", StringComparison.OrdinalIgnoreCase) &&
                     reader.LocalName is "Class" or "Code" or "FieldModifier")
                 {
+                    LastError = "attr-x:" + reader.LocalName;
                     return false;
                 }
 
@@ -203,6 +224,7 @@ public static class RichTextBoxHelper
                 {
                     if (reader.Value.Contains(marker, StringComparison.OrdinalIgnoreCase))
                     {
+                        LastError = "attr-marker:" + marker + " in " + reader.LocalName + "=" + (reader.Value.Length > 80 ? reader.Value.Substring(0, 80) : reader.Value);
                         return false;
                     }
                 }
@@ -214,6 +236,27 @@ public static class RichTextBoxHelper
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// 把 <c>&lt;Image/&gt;</c> 补回 <c>&lt;InlineUIContainer&gt;</c> 包裹（XamlWriter 保存时会拍平）。
+    /// 表情用的 <c>&lt;emoji:Image/&gt;</c> 本身就在容器里，不会被匹配到。
+    /// </summary>
+    private static string NormalizeInlineUiContainers(string xaml)
+    {
+        if (xaml.IndexOf("<Image", StringComparison.Ordinal) < 0)
+        {
+            return xaml;
+        }
+
+        // 已经是容器包裹的形式，不重复处理
+        if (xaml.Replace(" ", string.Empty).IndexOf("<InlineUIContainer><Image", StringComparison.Ordinal) >= 0)
+        {
+            return xaml;
+        }
+
+        return Regex.Replace(xaml, "<Image\\b[^>]*/>",
+            match => "<InlineUIContainer>" + match.Value + "</InlineUIContainer>");
     }
 
     /// <summary>

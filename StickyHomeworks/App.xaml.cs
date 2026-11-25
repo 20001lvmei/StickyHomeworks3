@@ -93,6 +93,7 @@ public partial class App : AppEx
                 services.AddSingleton<IThemeService, ThemeService>();
                 services.AddSingleton<ProfileService>();
                 services.AddSingleton<SettingsService>();
+                services.AddSingleton<HistoryService>();
                 services.AddSingleton<SettingsWindow>();
                 services.AddSingleton<WallpaperPickingService>();
                 services.AddHostedService<ThemeBackgroundService>();

@@ -40,6 +40,8 @@ public partial class MainWindow : Window
 
     public SettingsService SettingsService { get; }
 
+    public HistoryService HistoryService { get; }
+
     public event EventHandler? OnHomeworkEditorUpdated;
 
     /// <summary>
@@ -54,10 +56,12 @@ public partial class MainWindow : Window
 
     public MainWindow(ProfileService profileService,
                       SettingsService settingsService,
+                      HistoryService historyService,
                       WindowFocusObserverService focusObserverService)
     {
         ProfileService = profileService;
         SettingsService = settingsService;
+        HistoryService = historyService;
         //Automation.AddAutomationFocusChangedEventHandler(OnFocusChangedHandler);
         InitializeComponent();
         focusObserverService.FocusChanged += FocusObserverServiceOnFocusChanged;
@@ -214,6 +218,10 @@ public partial class MainWindow : Window
 
         // 过期作业不再直接删除，而是归档到 Profile.ArchivedHomeworks 中并保存，避免重启后数据丢失
         ViewModel.ArchivedHomeworks = ProfileService.ArchiveOutdated(SettingsService.Settings.IsAutoArchiveEnabled);
+        foreach (var archived in ViewModel.ArchivedHomeworks)
+        {
+            HistoryService.Add(archived, "过期归档");
+        }
         UpdateArchivedHomeworkState();
         if (ViewModel.ArchivedHomeworks.Count > 0)
         {
@@ -483,6 +491,8 @@ public partial class MainWindow : Window
         ViewModel.IsUpdatingHomeworkSubject = true;
         if (ViewModel.SelectedHomework == null)
             return;
+        // 删除前先记一条历史，误删可以找回
+        HistoryService.Add(ViewModel.SelectedHomework, "删除");
         ProfileService.Profile.Homeworks.Remove(ViewModel.SelectedHomework);
         ViewModel.IsUpdatingHomeworkSubject = false;
     }
@@ -853,6 +863,56 @@ public partial class MainWindow : Window
     {
         ViewModel.IsClosing = true;
         Close();
+    }
+
+    /// <summary>
+    /// 打开作业历史：列出删除/归档的作业，可恢复。
+    /// </summary>
+    private async void MenuItemHistory_OnClick(object sender, RoutedEventArgs e)
+    {
+        PopupExAdvanced.IsOpen = false;
+        await OpenHistoryAsync();
+    }
+
+    public async Task OpenHistoryAsync()
+    {
+        ViewModel.HistoryEntries.Clear();
+        foreach (var entry in HistoryService.Entries)
+        {
+            ViewModel.HistoryEntries.Add(entry);
+        }
+
+        if (ViewModel.HistoryEntries.Count == 0)
+        {
+            ViewModel.SnackbarMessageQueue.Enqueue("还没有历史记录。");
+            return;
+        }
+
+        ViewModel.SelectedHistoryEntry = ViewModel.HistoryEntries.First();
+        await DialogHost.Show(FindResource("HistoryDialog"), "MainWindow");
+    }
+
+    private void ButtonRestoreHistory_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel.SelectedHistoryEntry is not { } entry)
+        {
+            ViewModel.SnackbarMessageQueue.Enqueue("请先选择一条历史记录。");
+            return;
+        }
+
+        var homework = HistoryService.Restore(entry);
+        ProfileService.Profile.Homeworks.Add(homework);
+        ProfileService.SaveProfile();
+        ViewModel.HistoryEntries.Remove(entry);
+        DialogHost.Close("MainWindow");
+        ViewModel.SnackbarMessageQueue.Enqueue("已恢复到作业列表。");
+    }
+
+    private void ButtonClearHistory_OnClick(object sender, RoutedEventArgs e)
+    {
+        HistoryService.Clear();
+        ViewModel.HistoryEntries.Clear();
+        ViewModel.SnackbarMessageQueue.Enqueue("历史记录已清空。");
     }
 
     private void ButtonRestoreBackup_OnClick(object sender, RoutedEventArgs e)

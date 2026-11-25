@@ -104,6 +104,40 @@ public partial class HomeworkControl : UserControl
     }
 
     /// <summary>
+    /// 没选中时点文字先选中整条作业（否则富文本框会吃掉这次点击）；
+    /// 已选中时把点击交给文档处理，这样里面的链接可以点开。
+    /// </summary>
+    private void RichTextBox_OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (IsSelected)
+        {
+            return;
+        }
+
+        var item = FindAncestor<ListBoxItem>(this);
+        if (item != null)
+        {
+            item.IsSelected = true;
+            e.Handled = true;
+        }
+    }
+
+    private static T? FindAncestor<T>(DependencyObject? current) where T : DependencyObject
+    {
+        while (current != null)
+        {
+            if (current is T match)
+            {
+                return match;
+            }
+
+            current = System.Windows.Media.VisualTreeHelper.GetParent(current);
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// 点击作业里的链接时用默认浏览器打开（只读状态下也能点）。
     /// </summary>
     private void RichTextBox_OnRequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs e)

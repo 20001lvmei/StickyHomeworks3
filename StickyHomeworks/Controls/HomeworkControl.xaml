@@ -65,15 +65,11 @@
                                   BorderThickness="0"
                                    AcceptsReturn="False"
                                    KeyDown="RichTextBox_OnKeyDown"
+                                   PreviewMouseLeftButtonDown="RichTextBox_OnPreviewMouseLeftButtonDown"
                                    Hyperlink.RequestNavigate="RichTextBox_OnRequestNavigate"
-                                  IsReadOnly="{Binding IsSelected, Converter={StaticResource InvertBooleanConverter}}"
+                                   IsDocumentEnabled="True"
+                                  IsReadOnly="{Binding IsEditing, Converter={StaticResource InvertBooleanConverter}}"
                                   materialDesign:TextFieldAssist.UnderlineBrush="{x:Null}">
-                    <emoji:RichTextBox.IsHitTestVisible>
-                        <MultiBinding Converter="{StaticResource AndExpressionConverter}">
-                            <Binding Path="IsSelected"/>
-                            <Binding Path="IsEditing"/>
-                        </MultiBinding>
-                    </emoji:RichTextBox.IsHitTestVisible>
                     <materialDesign:BehaviorsAssist.Behaviors>
                         <materialDesign:BehaviorCollection>
                             <behaviors:RichTextBoxBindingBehavior DocumentXaml="{Binding Homework.Content, UpdateSourceTrigger=PropertyChanged}"/>

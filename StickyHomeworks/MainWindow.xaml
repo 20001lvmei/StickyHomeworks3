@@ -374,6 +374,12 @@
                                     </materialDesign:BehaviorCollection>
                                 </Setter.Value>
                             </Setter>
+                            <Style.Triggers>
+                                <!-- 选中时无论有没有焦点都给出灰色背景（冻结时点击也能看出来） -->
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter Property="Background" Value="{DynamicResource MaterialDesignSelection}" />
+                                </Trigger>
+                            </Style.Triggers>
                         </Style>
                     </ListView.ItemContainerStyle>
                     <ListView.GroupStyle>

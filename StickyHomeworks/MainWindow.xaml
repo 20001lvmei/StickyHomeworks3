@@ -256,23 +256,18 @@
                                           ToolTip="锁定窗口"
                                           Visibility="{Binding ViewModel.IsExpanded, Converter={StaticResource BooleanToVisibilityConverter}}"
                                           IsChecked="{Binding ViewModel.IsUnlocked, Converter={StaticResource InvertBooleanConverter}}" />
-                            <!-- 冻结：只能查看，不能修改作业（雪花） -->
+                            <!-- 冻结：两个状态同一个雪花图标，冻结时加一条斜线 -->
                             <Button x:Name="ButtonFreeze" Click="ButtonFreeze_OnClick"
+                                    Style="{StaticResource MaterialDesignToolForegroundButton}"
+                                    ToolTip="冻结：仅可查看，不能修改作业"
                                     Visibility="{Binding ViewModel.IsExpanded, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                <Button.Style>
-                                    <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignToolForegroundButton}">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding SettingsService.Settings.IsFrozen}" Value="True">
-                                                <Setter Property="Content" Value="{materialDesign:PackIcon Snowflake, Size=18}"/>
-                                                <Setter Property="ToolTip" Value="已冻结：仅可查看，点此解冻"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding SettingsService.Settings.IsFrozen}" Value="False">
-                                                <Setter Property="Content" Value="{materialDesign:PackIcon SnowflakeVariant, Size=18}"/>
-                                                <Setter Property="ToolTip" Value="冻结：仅可查看，不能修改作业"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Button.Style>
+                                <Grid Width="18" Height="18">
+                                    <materialDesign:PackIcon Kind="Snowflake" Width="18" Height="18"
+                                                             HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    <Line X1="2.5" Y1="15.5" X2="15.5" Y2="2.5"
+                                          Stroke="White" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                          Visibility="{Binding SettingsService.Settings.IsFrozen, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                </Grid>
                             </Button>
                             <Button Content="{materialDesign:PackIcon FileExport, Size=18}" ToolTip="导出…" 
                                     Visibility="{Binding ViewModel.IsExpanded, Converter={StaticResource BooleanToVisibilityConverter}}"

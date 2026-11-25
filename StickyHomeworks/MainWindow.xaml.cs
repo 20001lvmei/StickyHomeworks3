@@ -477,13 +477,8 @@ public partial class MainWindow : Window
 
         if (frozen)
         {
-            // 冻结时关掉编辑界面，避免正在编辑
+            // 冻结时关掉编辑界面，避免正在编辑；不额外弹提示
             ExitEditingMode();
-            ViewModel.SnackbarMessageQueue.Enqueue("已冻结：仅可查看，不能修改作业。");
-        }
-        else
-        {
-            ViewModel.SnackbarMessageQueue.Enqueue("已解冻：可以正常修改作业。");
         }
     }
 

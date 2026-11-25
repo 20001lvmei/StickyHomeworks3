@@ -271,20 +271,9 @@ public partial class HomeworkEditWindow : Window, INotifyPropertyChanged
         "✅", "❌", "⚠️", "❓", "❗", "💡", "⏰", "☀️", "🌙", "🍀"
     };
 
-    private Popup? _emojiPopup;
-
     private void ButtonEmoji_OnClick(object sender, RoutedEventArgs e)
     {
-        CloseEmojiPopup();
-
         var panel = new WrapPanel { Width = 280, Background = Brushes.White };
-        var popup = new Popup
-        {
-            StaysOpen = false,
-            AllowsTransparency = true,
-            PlacementTarget = sender as UIElement,
-            Placement = PlacementMode.Bottom
-        };
 
         foreach (var emoji in Emojis)
         {
@@ -302,30 +291,20 @@ public partial class HomeworkEditWindow : Window, INotifyPropertyChanged
             button.Click += (_, _) =>
             {
                 InsertText(emoji);
-                popup.IsOpen = false;
+                EmojiPopup.IsOpen = false;
             };
             panel.Children.Add(button);
         }
 
-        popup.Child = new Border
+        EmojiPopup.Child = new Border
         {
             Child = panel,
             Background = Brushes.White,
             BorderBrush = new SolidColorBrush(Color.FromRgb(0xE2, 0xE8, 0xF0)),
             BorderThickness = new Thickness(1)
         };
-
-        _emojiPopup = popup;
-        popup.IsOpen = true;
-    }
-
-    private void CloseEmojiPopup()
-    {
-        if (_emojiPopup != null)
-        {
-            _emojiPopup.IsOpen = false;
-            _emojiPopup = null;
-        }
+        EmojiPopup.PlacementTarget = sender as UIElement;
+        EmojiPopup.IsOpen = true;
     }
 
     /// <summary>

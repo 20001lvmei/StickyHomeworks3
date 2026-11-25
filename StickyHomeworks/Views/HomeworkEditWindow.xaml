@@ -36,13 +36,19 @@
     </WindowChrome.WindowChrome>
     <materialDesign:Card Margin="6"
             Background="{DynamicResource MaterialDesignPaper}">
-        <Grid>
+        <Grid x:Name="RootGrid">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
+            <!-- 表情面板（Popup 必须在可视化树里才能真正弹出） -->
+            <Popup x:Name="EmojiPopup"
+                   StaysOpen="False"
+                   AllowsTransparency="True"
+                   Placement="Bottom"
+                   HorizontalOffset="-40"/>
             <Grid Grid.Row="0" Background="{DynamicResource MaterialDesignToolBarBackground}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="1*"/>

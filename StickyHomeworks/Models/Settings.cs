@@ -160,6 +160,23 @@ public class Settings : ObservableRecipient
             if (value == _isNumberedList) return;
             _isNumberedList = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(ListMarkerStyleIndex));
+        }
+    }
+
+    /// <summary>
+    /// 下拉框用的索引：0 = 数字序号，1 = 圆点。只用于界面绑定，不单独存储。
+    /// </summary>
+    [JsonIgnore]
+    public int ListMarkerStyleIndex
+    {
+        get => _isNumberedList ? 0 : 1;
+        set
+        {
+            var numbered = value == 0;
+            if (numbered == _isNumberedList) return;
+            IsNumberedList = numbered;
+            OnPropertyChanged();
         }
     }
 

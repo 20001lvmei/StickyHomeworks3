@@ -325,10 +325,18 @@
                                 </ely:SettingsCard>
                                 <!-- 列表标记 -->
                                 <ely:SettingsCard IconGlyph="FormatListNumbered" Header="作业前面的标记"
-                                                       Description="用数字序号（1. 2.）还是圆点。">
+                                                       Description="给每条作业前面显示数字序号还是圆点。">
                                     <ely:SettingsCard.Switcher>
-                                        <ToggleButton Style="{StaticResource MaterialDesignSwitchToggleButton}"
-                                                      IsChecked="{Binding Settings.IsNumberedList, Mode=TwoWay}" />
+                                        <ComboBox Foreground="{DynamicResource MaterialDesignBody}"
+                                                  HorizontalContentAlignment="Left"
+                                                  SelectedIndex="{Binding Settings.ListMarkerStyleIndex, Mode=TwoWay}">
+                                            <ComboBoxItem HorizontalContentAlignment="Left">
+                                                <ely:IconText Kind="FormatListNumbered" Text="数字序号（1. 2.）" />
+                                            </ComboBoxItem>
+                                            <ComboBoxItem HorizontalContentAlignment="Left">
+                                                <ely:IconText Kind="CircleSmall" Text="圆点（•）" />
+                                            </ComboBoxItem>
+                                        </ComboBox>
                                     </ely:SettingsCard.Switcher>
                                 </ely:SettingsCard>
                                 <Separator Margin="0 16 0 8"/>

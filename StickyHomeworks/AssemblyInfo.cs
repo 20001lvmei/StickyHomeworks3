@@ -11,8 +11,8 @@ using System.Windows;
                                                 // app, or any theme specific resource dictionaries)
 )]
 
-[assembly: AssemblyVersion("0.3.7.0")]
-[assembly: AssemblyFileVersion("0.3.7.0")]
+[assembly: AssemblyVersion("0.3.8.0")]
+[assembly: AssemblyFileVersion("0.3.8.0")]
 [assembly: AssemblyTitle("StickyHomeworks3")]
 [assembly: AssemblyProduct("StickyHomeworks3")]
 [assembly: AssemblyCompany("20001lvmei")]

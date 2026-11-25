@@ -373,8 +373,24 @@
                                                           IsSelected="{Binding IsSelected, RelativeSource={RelativeSource FindAncestor, AncestorType=ListBoxItem}, Mode=OneWay}"
                                                           HorizontalAlignment="Stretch"
                                                           Homework="{Binding}" />
-                                <StackPanel Grid.Column="1" Orientation="Horizontal"
-                                            Visibility="{Binding IsSelected, RelativeSource={RelativeSource FindAncestor, AncestorType=ListBoxItem}, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                    <StackPanel.Style>
+                                        <Style TargetType="StackPanel">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <!-- 选中且未冻结时才显示编辑/删除 -->
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource FindAncestor, AncestorType=ListBoxItem}}"
+                                                                   Value="True"/>
+                                                        <Condition Binding="{Binding SettingsService.Settings.IsFrozen, RelativeSource={RelativeSource FindAncestor, AncestorType=local:MainWindow}}"
+                                                                   Value="False"/>
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </MultiDataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </StackPanel.Style>
                                     <Button Content="{materialDesign:PackIcon EditOutline}"
                                             Style="{StaticResource MaterialDesignToolForegroundButton}"
                                             Margin="4 0" ToolTip="编辑" Click="ButtonEditHomework_OnClick" />

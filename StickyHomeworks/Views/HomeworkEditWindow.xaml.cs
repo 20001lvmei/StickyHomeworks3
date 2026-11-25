@@ -233,8 +233,17 @@ public partial class HomeworkEditWindow : Window, INotifyPropertyChanged
 
     private void ApplyTemplate(HomeworkTemplate template)
     {
-        var homework = MainWindow.ViewModel.SelectedHomework ?? MainWindow.ViewModel.EditingHomework;
-        homework.Content = template.Content;
+        try
+        {
+            var homework = MainWindow.ViewModel.SelectedHomework ?? MainWindow.ViewModel.EditingHomework;
+            homework.Content = template.Content;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[Editor] 套用模板失败：{ex}");
+            MessageBox.Show($"套用模板失败：{ex.Message}", "套用模板",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
     }
 
     private void ButtonSaveAsTemplate_OnClick(object sender, RoutedEventArgs e)

@@ -133,6 +133,13 @@ public partial class App : AppEx
         GetService<MainWindow>().Show();
         StartShowWindowListener();
         StartTrayIcon();
+
+        // 调试用：带 --history 启动时直接打开作业历史（便于截图/自测）
+        if (e.Args.Contains("--history"))
+        {
+            _ = GetService<MainWindow>().OpenHistoryAsync();
+        }
+
         base.OnStartup(e);
     }
 
@@ -212,13 +219,37 @@ public partial class App : AppEx
 
     /// <summary>
     /// 把未处理异常写入数据目录下的 crash.log，方便用户反馈问题时附上。
+    /// 日志超过 1 MB 时自动截断，只保留最近的内容，避免反复崩溃把磁盘写满。
     /// </summary>
     private static void WriteCrashLog(Exception exception)
     {
+        const long maxLogBytes = 1024 * 1024;
+
         try
         {
             var path = Path.Combine(AppStorage.DataDirectory, "crash.log");
             Directory.CreateDirectory(AppStorage.DataDirectory);
+
+            // 文件过大就只留最后 200 KB，前面全是重复的堆栈
+            try
+            {
+                var info = new FileInfo(path);
+                if (info.Exists && info.Length > maxLogBytes)
+                {
+                    using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    const int keepBytes = 200 * 1024;
+                    stream.Seek(-keepBytes, SeekOrigin.End);
+                    var buffer = new byte[keepBytes];
+                    var read = stream.Read(buffer, 0, keepBytes);
+                    stream.Close();
+                    File.WriteAllBytes(path, buffer[..read]);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[App] 截断崩溃日志失败：{ex.Message}");
+            }
+
             File.AppendAllText(path,
                 $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {exception}{Environment.NewLine}{Environment.NewLine}",
                 Encoding.UTF8);

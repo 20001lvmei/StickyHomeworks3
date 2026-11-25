@@ -147,14 +147,14 @@
                     <DataTemplate>
                         <StackPanel Margin="0 4">
                             <TextBlock>
-                                <Run Text="{Binding RecordedAtText}" FontWeight="Medium"/>
+                                <Run Text="{Binding RecordedAtText, Mode=OneWay}" FontWeight="Medium"/>
                                 <Run Text=" · "/>
-                                <Run Text="{Binding Reason}" Foreground="#FF2563EB"/>
+                                <Run Text="{Binding Reason, Mode=OneWay}" Foreground="#FF2563EB"/>
                                 <Run Text=" · "/>
-                                <Run Text="{Binding Subject}"/>
+                                <Run Text="{Binding Subject, Mode=OneWay}"/>
                             </TextBlock>
                             <TextBlock Opacity="0.6" FontSize="12" TextTrimming="CharacterEllipsis"
-                                       Text="{Binding Preview}"/>
+                                       Text="{Binding Preview, Mode=OneWay}"/>
                         </StackPanel>
                     </DataTemplate>
                 </ListBox.ItemTemplate>

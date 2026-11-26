@@ -45,7 +45,24 @@ StickyHomeworks3 是一款支持富文本的桌面作业贴工具。
 - 如需指定其它位置，可以设置环境变量 `STICKYHOMEWORKS3_DATA_DIR`（也兼容旧的 `STICKYHOMEWORKS_DATA_DIR`）。
 - 数据文件损坏时会自动回退到 `.bak` 备份，损坏的文件会被重命名为 `*.corrupt-<时间戳>` 保留，方便排查。
 - 如果首选目录不可写，会自动回退到其它可用目录（`%APPDATA%` → 临时目录 → 程序目录下的 `data`），不会因此启动失败。
-- 过期作业会在启动时被移入归档（`Profile.json` 中的 `ArchivedHomeworks`），可在主界面的「更多选项 → 恢复已归档的作业」中找回；找回后的作业不会再被自动归档。如不希望自动归档，可在设置中关闭。
+- 过期作业会在启动时被移入归档（`Profile.json` 中的 `ArchivedHomeworks`），可在主界面的「更多选项 → 恢复已归档的作业」中找回；找回时截止日期会改成当天，之后过期仍会正常归档。如不希望自动归档，可在设置中关闭。
+
+## 与 ClassIsland 联动（上课隐藏 / 下课显示）
+
+程序支持命令行控制显隐，配合 ClassIsland 的「自动化」即可实现上课自动隐藏、下课自动显示：
+
+| 命令 | 作用 |
+| --- | --- |
+| `StickyHomeworks3.exe --hide` | 隐藏窗口 |
+| `StickyHomeworks3.exe --show` | 显示窗口 |
+| `StickyHomeworks3.exe --toggle` | 显示 / 隐藏切换 |
+
+在 ClassIsland 里新建两个自动化：
+
+1. 触发条件 **上课** → 动作 **运行** → `"<安装路径>\StickyHomeworks3.exe" --hide`
+2. 触发条件 **课间** → 动作 **运行** → `"<安装路径>\StickyHomeworks3.exe" --show`
+
+程序已在运行时会把命令通过命名管道转给现有实例，不会重复启动。
 
 ## 开始使用
 

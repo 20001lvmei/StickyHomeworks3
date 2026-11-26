@@ -851,6 +851,20 @@ public partial class MainWindow : Window
     public void ShowWindowFromTray() => ShowFromBackground();
 
     /// <summary>
+    /// 上课时隐藏窗口（ClassIsland 联动调用）。
+    /// </summary>
+    public void HideForClass()
+    {
+        ExitEditingMode();
+        Hide();
+    }
+
+    /// <summary>
+    /// 下课时把窗口显示出来（ClassIsland 联动调用）。
+    /// </summary>
+    public void ShowAfterClass() => ShowFromBackground();
+
+    /// <summary>
     /// 托盘菜单：显示/隐藏窗口。
     /// </summary>
     public void ToggleWindowFromTray()

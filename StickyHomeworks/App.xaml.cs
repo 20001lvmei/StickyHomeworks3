@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.IO.Pipes;
 using System.IO;
 using System.Reflection;
 using System.Text;
@@ -32,6 +33,17 @@ public partial class App : AppEx
 
     private const string ShowWindowEventName = "StickyHomeworks3.ShowWindow";
 
+    /// <summary>
+    /// 外部命令通道（上课隐藏 / 下课显示）。
+    /// </summary>
+    private const string CommandPipeName = "StickyHomeworks3.Command";
+
+    private string? _startupCommand;
+
+    private Thread? _commandThread;
+
+    private volatile bool _commandServerRunning;
+
     public static string AppVersion => Assembly.GetExecutingAssembly().GetName().Version!.ToString();
 
     protected override void OnStartup(StartupEventArgs e)
@@ -56,6 +68,10 @@ public partial class App : AppEx
 
     private void StartupCore(StartupEventArgs e)
     {
+        // 支持外部（如 ClassIsland 自动化）通过命令行控制显隐：
+        // StickyHomeworks3.exe --hide / --show / --toggle
+        _startupCommand = ParseCommand(e.Args);
+
         Mutex = new Mutex(true, "StickyHomeworks3.Lock", out var createNew);
         try
         {
@@ -68,14 +84,21 @@ public partial class App : AppEx
 
         if (!createNew)
         {
-            // 已经有实例在运行：通知它把窗口显示到最前，然后自己退出
+            // 已经有实例在运行：带命令就转发命令，否则通知它把窗口显示到最前
             try
             {
-                ShowWindowEvent?.Set();
+                if (_startupCommand != null)
+                {
+                    SendCommandToRunningInstance(_startupCommand);
+                }
+                else
+                {
+                    ShowWindowEvent?.Set();
+                }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[App] 唤醒已有实例失败：{ex.Message}");
+                Debug.WriteLine($"[App] 通知已有实例失败：{ex.Message}");
             }
 
             Environment.Exit(0);
@@ -133,6 +156,22 @@ public partial class App : AppEx
         GetService<MainWindow>().Show();
         StartShowWindowListener();
         StartTrayIcon();
+        StartCommandServer();
+
+        // 本实例自己是首个实例时，也要处理 --hide / --show
+        if (_startupCommand != null)
+        {
+            var window = GetService<MainWindow>();
+            switch (_startupCommand)
+            {
+                case "hide":
+                    window.HideForClass();
+                    break;
+                case "toggle":
+                    window.ToggleWindowFromTray();
+                    break;
+            }
+        }
 
         // 调试用：带 --history 启动时直接打开作业历史（便于截图/自测）
         if (e.Args.Contains("--history"))
@@ -172,6 +211,97 @@ public partial class App : AppEx
     /// 后台等待“再次启动”的信号，收到后把主窗口显示到最前。
     /// 这样即使窗口被冻结在桌面底层，用户再点一次 exe 也能把它叫出来。
     /// </summary>
+    /// <summary>
+    /// 把 --hide / --show / --toggle 转发给正在运行的实例。
+    /// </summary>
+    private static void SendCommandToRunningInstance(string command)
+    {
+        using var client = new NamedPipeClientStream(".", CommandPipeName, PipeDirection.Out);
+        client.Connect(2000);
+        using var writer = new StreamWriter(client) { AutoFlush = true };
+        writer.WriteLine(command);
+    }
+
+    private static string? ParseCommand(string[] args)
+    {
+        foreach (var arg in args)
+        {
+            switch (arg.Trim().ToLowerInvariant())
+            {
+                case "--hide":
+                    return "hide";
+                case "--show":
+                    return "show";
+                case "--toggle":
+                    return "toggle";
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// 监听外部命令（上课隐藏 / 下课显示）。
+    /// </summary>
+    private void StartCommandServer()
+    {
+        _commandServerRunning = true;
+        _commandThread = new Thread(() =>
+        {
+            while (_commandServerRunning)
+            {
+                try
+                {
+                    using var server = new NamedPipeServerStream(CommandPipeName, PipeDirection.In, 1,
+                        PipeTransmissionMode.Byte, PipeOptions.None);
+                    server.WaitForConnection();
+                    using var reader = new StreamReader(server);
+                    var command = reader.ReadLine()?.Trim().ToLowerInvariant();
+                    if (string.IsNullOrEmpty(command))
+                    {
+                        continue;
+                    }
+
+                    Dispatcher.Invoke(() =>
+                    {
+                        if (MainWindow is not MainWindow window)
+                        {
+                            return;
+                        }
+
+                        switch (command)
+                        {
+                            case "hide":
+                                window.HideForClass();
+                                break;
+                            case "show":
+                                window.ShowAfterClass();
+                                break;
+                            case "toggle":
+                                window.ToggleWindowFromTray();
+                                break;
+                        }
+                    });
+                }
+                catch (Exception ex)
+                {
+                    if (!_commandServerRunning)
+                    {
+                        break;
+                    }
+
+                    Debug.WriteLine($"[App] 命令通道异常：{ex.Message}");
+                    Thread.Sleep(500);
+                }
+            }
+        })
+        {
+            IsBackground = true,
+            Name = "StickyHomeworks3.CommandServer"
+        };
+        _commandThread.Start();
+    }
+
     private void StartShowWindowListener()
     {
         if (ShowWindowEvent == null)

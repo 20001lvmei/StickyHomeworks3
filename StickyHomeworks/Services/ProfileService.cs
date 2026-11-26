@@ -102,8 +102,11 @@ public class ProfileService : IHostedService, INotifyPropertyChanged
         }
 
         var today = DateTime.Today;
+        // 只要截止日期早于今天就归档，不再看“豁免”标记：
+        // 旧版（含从 v2 迁移过来的数据）会给有标签的作业打上豁免标记，
+        // 结果这类作业永远不会归档，用户看到的就是“有标签的不能自动归档”。
         foreach (var homework in Profile.Homeworks
-                     .Where(i => !i.IsArchiveExempt && i.DueTime.Date < today)
+                     .Where(i => i.DueTime.Date < today)
                      .ToList())
         {
             if (Profile.Homeworks.Remove(homework))
@@ -123,7 +126,8 @@ public class ProfileService : IHostedService, INotifyPropertyChanged
 
     /// <summary>
     /// 把所有归档的作业恢复到列表中，返回恢复的数量。
-    /// 恢复的作业会标记为豁免自动归档，避免下次启动又被归档。
+    /// 恢复的作业截止日期会改成今天，这样下次启动不会立刻又被归档；
+    /// 如果用户一直不改日期，它过期后仍然会正常归档。
     /// </summary>
     public int RestoreArchived()
     {
@@ -133,7 +137,9 @@ public class ProfileService : IHostedService, INotifyPropertyChanged
             Profile.ArchivedHomeworks.Remove(item);
             if (!Profile.Homeworks.Contains(item))
             {
-                item.IsArchiveExempt = true;
+                // 兼容旧数据：清掉历史遗留的“豁免归档”标记
+                item.IsArchiveExempt = false;
+                item.DueTime = DateTime.Today;
                 Profile.Homeworks.Add(item);
             }
         }

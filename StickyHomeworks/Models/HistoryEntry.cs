@@ -102,7 +102,6 @@ public class HistoryEntry : ObservableObject
     {
         Subject = Subject,
         Content = Content,
-        DueTime = DateTime.Today,
-        IsArchiveExempt = true
+        DueTime = DateTime.Today
     };
 }

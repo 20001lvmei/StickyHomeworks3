@@ -58,8 +58,8 @@ public class Homework : ObservableRecipient
     }
 
     /// <summary>
-    /// 是否豁免自动归档。用户在“恢复已归档的作业”中找回的作业会设置此标记，
-    /// 这样即使截止日期已过，下次启动也不会再次被归档。
+    /// 旧版本留下的“豁免自动归档”标记。现在自动归档不再看它（只要过期就归档），
+    /// 保留字段只是为了兼容旧数据、原样写回，不做任何判断。
     /// </summary>
     public bool IsArchiveExempt
     {

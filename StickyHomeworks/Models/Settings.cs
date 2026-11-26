@@ -180,6 +180,37 @@ public class Settings : ObservableRecipient
         }
     }
 
+    private bool _isClassIslandLinkEnabled;
+    private string _classIslandDataDirectory = "";
+
+    /// <summary>
+    /// 是否启用 ClassIsland 联动：上课自动隐藏窗口，下课自动显示。
+    /// </summary>
+    public bool IsClassIslandLinkEnabled
+    {
+        get => _isClassIslandLinkEnabled;
+        set
+        {
+            if (value == _isClassIslandLinkEnabled) return;
+            _isClassIslandLinkEnabled = value;
+            OnPropertyChanged();
+        }
+    }
+
+    /// <summary>
+    /// ClassIsland 数据目录，留空则自动检测。
+    /// </summary>
+    public string ClassIslandDataDirectory
+    {
+        get => _classIslandDataDirectory;
+        set
+        {
+            if (value == _classIslandDataDirectory) return;
+            _classIslandDataDirectory = value ?? "";
+            OnPropertyChanged();
+        }
+    }
+
     public string Title
     {
         get => _title;

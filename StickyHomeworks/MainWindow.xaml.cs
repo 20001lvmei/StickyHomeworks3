@@ -284,6 +284,7 @@ public partial class MainWindow : Window
             }
         };
         base.OnContentRendered(e);
+        StartClassIslandLink();
 
 #if DEBUG
         if (Environment.GetEnvironmentVariable("STICKYHOMEWORKS3_SELFTEST") == "1")
@@ -863,6 +864,53 @@ public partial class MainWindow : Window
     /// 下课时把窗口显示出来（ClassIsland 联动调用）。
     /// </summary>
     public void ShowAfterClass() => ShowFromBackground();
+
+    private readonly ClassIslandLinkService _classIslandLink = new();
+
+    private DispatcherTimer? _classIslandTimer;
+
+    private ClassIslandTimeState _lastClassIslandState = ClassIslandTimeState.Unknown;
+
+    /// <summary>
+    /// 按 ClassIsland 课表定时判断上课/课间，自动隐藏或显示窗口。
+    /// </summary>
+    private void StartClassIslandLink()
+    {
+        _classIslandTimer = new DispatcherTimer(DispatcherPriority.Background)
+        {
+            Interval = TimeSpan.FromSeconds(10)
+        };
+        _classIslandTimer.Tick += (_, _) => CheckClassIslandState();
+        _classIslandTimer.Start();
+        CheckClassIslandState();
+    }
+
+    private void CheckClassIslandState()
+    {
+        if (!SettingsService.Settings.IsClassIslandLinkEnabled)
+        {
+            _lastClassIslandState = ClassIslandTimeState.Unknown;
+            return;
+        }
+
+        var state = _classIslandLink.GetState(SettingsService.Settings.ClassIslandDataDirectory, DateTime.Now);
+        if (state == ClassIslandTimeState.Unknown || state == _lastClassIslandState)
+        {
+            return;
+        }
+
+        _lastClassIslandState = state;
+        if (state == ClassIslandTimeState.InClass)
+        {
+            Debug.WriteLine("[ClassIslandLink] 上课，隐藏窗口");
+            HideForClass();
+        }
+        else
+        {
+            Debug.WriteLine("[ClassIslandLink] 下课，显示窗口");
+            ShowAfterClass();
+        }
+    }
 
     /// <summary>
     /// 托盘菜单：显示/隐藏窗口。

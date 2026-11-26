@@ -49,18 +49,29 @@ StickyHomeworks3 是一款支持富文本的桌面作业贴工具。
 
 ## 与 ClassIsland 联动（上课隐藏 / 下课显示）
 
-程序支持命令行控制显隐，配合 ClassIsland 的「自动化」即可实现上课自动隐藏、下课自动显示：
+**在作业程序里配置就行，不需要动 ClassIsland。**
+
+设置 → 外观 → 「ClassIsland 联动」：
+
+- **上课隐藏、下课显示**：打开这个开关
+- **ClassIsland 数据目录**：留空自动检测（便携版找 exe 同级的 `data`，安装版找 `%LOCALAPPDATA%\ClassIsland`），也可以手动选目录
+
+打开后程序每 10 秒读一次 ClassIsland 的课表（`Profiles\<当前档案>.json`），按时间段判断：
+
+- 当前处于「上课」时间段 → 隐藏窗口
+- 课间 / 早读前 / 放学后 → 显示窗口
+
+只在状态切换时动作，不会和你手动开关窗口打架。读不到课表时不做任何处理。
+
+### 命令行方式（备用）
+
+如果不想用内置联动，也可以用命令配合其它工具：
 
 | 命令 | 作用 |
 | --- | --- |
 | `StickyHomeworks3.exe --hide` | 隐藏窗口 |
 | `StickyHomeworks3.exe --show` | 显示窗口 |
 | `StickyHomeworks3.exe --toggle` | 显示 / 隐藏切换 |
-
-在 ClassIsland 里新建两个自动化：
-
-1. 触发条件 **上课** → 动作 **运行** → `"<安装路径>\StickyHomeworks3.exe" --hide`
-2. 触发条件 **课间** → 动作 **运行** → `"<安装路径>\StickyHomeworks3.exe" --show`
 
 程序已在运行时会把命令通过命名管道转给现有实例，不会重复启动。
 

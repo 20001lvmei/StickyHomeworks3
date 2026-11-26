@@ -173,6 +173,27 @@ public partial class SettingsWindow : MyWindow
         AppEx.GetService<SettingsService>().SaveSettings();
     }
 
+    private void ButtonPickClassIslandData_OnClick(object sender, RoutedEventArgs e)
+    {
+        var dialog = new Microsoft.Win32.OpenFolderDialog
+        {
+            Title = "选择 ClassIsland 数据目录（包含 Settings.json 与 Profiles 文件夹）",
+            Multiselect = false
+        };
+
+        var current = Settings.ClassIslandDataDirectory;
+        if (!string.IsNullOrWhiteSpace(current) && System.IO.Directory.Exists(current))
+        {
+            dialog.InitialDirectory = current;
+        }
+
+        if (dialog.ShowDialog(this) == true)
+        {
+            Settings.ClassIslandDataDirectory = dialog.FolderName;
+            AppEx.GetService<SettingsService>().SaveSettings();
+        }
+    }
+
     private void ButtonRestoreTheme_OnClick(object sender, RoutedEventArgs e)
     {
         Settings.ResetThemeToBlue();

@@ -340,6 +340,31 @@
                                     </ely:SettingsCard.Switcher>
                                 </ely:SettingsCard>
                                 <Separator Margin="0 16 0 8"/>
+                                <ely:IconText Kind="LinkVariant" Text="ClassIsland 联动" Margin="0 0 0 8"/>
+                                <!-- 上课隐藏 / 下课显示 -->
+                                <ely:SettingsCard IconGlyph="EyeOutline" Header="上课隐藏、下课显示"
+                                                       Description="读取 ClassIsland 课表，上课时自动隐藏窗口，下课时自动显示。">
+                                    <ely:SettingsCard.Switcher>
+                                        <ToggleButton Style="{StaticResource MaterialDesignSwitchToggleButton}"
+                                                      IsChecked="{Binding Settings.IsClassIslandLinkEnabled, Mode=TwoWay}" />
+                                    </ely:SettingsCard.Switcher>
+                                </ely:SettingsCard>
+                                <ely:SettingsCard IconGlyph="FolderOutline" Header="ClassIsland 数据目录"
+                                                       Description="留空则自动检测（便携版找 exe 同级的 data，安装版找 %LOCALAPPDATA%\ClassIsland）。">
+                                    <ely:SettingsCard.Switcher>
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Settings.ClassIslandDataDirectory}"
+                                                       MaxWidth="220"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       VerticalAlignment="Center"
+                                                       Foreground="{DynamicResource MaterialDesignBody}" />
+                                            <Button Content="选择…" Margin="8 0 0 0"
+                                                    Style="{StaticResource MaterialDesignFlatButton}"
+                                                    Click="ButtonPickClassIslandData_OnClick" />
+                                        </StackPanel>
+                                    </ely:SettingsCard.Switcher>
+                                </ely:SettingsCard>
+                                <Separator Margin="0 16 0 8"/>
                                 <ely:IconText Kind="PaletteOutline" Text="主题" Margin="0 0 0 8"/>
                                 <!-- 应用主题 -->
                                 <ely:SettingsCard IconGlyph="ThemeLightDark" Header="应用主题"

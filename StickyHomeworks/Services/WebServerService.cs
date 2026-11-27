@@ -22,15 +22,18 @@ public class WebServerService : IDisposable
 
     private ProfileService? _profileService;
 
+    private SettingsService? _settingsService;
+
     public bool IsRunning => _listener != null;
 
     /// <summary>
     /// 启动网页服务。返回监听地址（失败时返回 null）。
     /// </summary>
-    public string? Start(ProfileService profileService, int port)
+    public string? Start(ProfileService profileService, SettingsService settingsService, int port)
     {
         Stop();
         _profileService = profileService;
+        _settingsService = settingsService;
 
         try
         {
@@ -135,6 +138,13 @@ public class WebServerService : IDisposable
             if (request.Method == "GET" && path.Equals("/api/homeworks", StringComparison.OrdinalIgnoreCase))
             {
                 return HttpResponse.Json(JsonSerializer.Serialize(ListHomeworks()));
+            }
+
+            if (request.Method == "GET" && path.Equals("/api/subjects", StringComparison.OrdinalIgnoreCase))
+            {
+                var subjects = RunOnUi(() => _settingsService?.Settings.Subjects.ToList() ?? new List<string>())
+                               ?? new List<string>();
+                return HttpResponse.Json(JsonSerializer.Serialize(subjects));
             }
 
             if (request.Method == "POST" && path.Equals("/api/homeworks", StringComparison.OrdinalIgnoreCase))
@@ -456,14 +466,13 @@ public class WebServerService : IDisposable
 <main>
   <div class="card">
     <div class="grid">
-      <input id="subject" type="text" placeholder="科目" list="subjects" />
+      <select id="subject"></select>
       <input id="text" type="text" placeholder="作业内容" />
       <input id="due" type="date" />
     </div>
     <div class="row" style="margin-top:8px; justify-content:flex-end;">
       <button id="add">添加作业</button>
     </div>
-    <datalist id="subjects"></datalist>
   </div>
 
   <div class="card">
@@ -474,8 +483,37 @@ public class WebServerService : IDisposable
 <script>
 const $ = (id) => document.getElementById(id);
 let editing = null;
+let subjectOptions = [];
 
 function showHint(text) { $('hint').textContent = text; }
+
+function fillSubjectOptions(list, selected) {
+  if (list && list.length) {
+    subjectOptions = list.slice();
+  }
+  const select = $('subject');
+  const values = subjectOptions.slice();
+  if (selected && !values.includes(selected)) values.unshift(selected);
+  select.innerHTML = '';
+  for (const s of values) {
+    const opt = document.createElement('option');
+    opt.value = s;
+    opt.textContent = s;
+    select.appendChild(opt);
+  }
+  if (selected) select.value = selected;
+}
+
+async function loadSubjects() {
+  try {
+    const res = await fetch('/api/subjects', { cache: 'no-store' });
+    if (!res.ok) return;
+    const list = await res.json();
+    fillSubjectOptions(list, $('subject').value);
+  } catch (e) {
+    showHint('读取科目失败：' + e.message);
+  }
+}
 
 async function load() {
   try {
@@ -543,21 +581,22 @@ function render(items) {
     li.append(meta, text, ops);
     list.appendChild(li);
   }
-
-  const dl = $('subjects');
-  dl.innerHTML = '';
-  for (const s of subjects) {
-    const opt = document.createElement('option');
-    opt.value = s;
-    dl.appendChild(opt);
-  }
 }
 
 function buildEditor(item) {
   const wrap = document.createElement('div');
   wrap.style.cssText = 'display:grid; gap:6px;';
-  const subject = document.createElement('input');
-  subject.type = 'text'; subject.value = item.subject || ''; subject.placeholder = '科目';
+  const subject = document.createElement('select');
+  const values = subjectOptions.slice();
+  const current = item.subject || '';
+  if (current && !values.includes(current)) values.unshift(current);
+  for (const s of values) {
+    const opt = document.createElement('option');
+    opt.value = s;
+    opt.textContent = s;
+    subject.appendChild(opt);
+  }
+  if (current) subject.value = current;
   const text = document.createElement('textarea');
   text.value = item.text || ''; text.placeholder = '作业内容';
   const due = document.createElement('input');
@@ -570,7 +609,7 @@ function buildEditor(item) {
 async function saveItem(id) {
   const editor = document.querySelector('li [data-role=editor]');
   if (!editor) return;
-  const [subject, text, due] = editor.querySelectorAll('input,textarea');
+  const [subject, text, due] = editor.querySelectorAll('select,input,textarea');
   await fetch('/api/homeworks/' + id, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -601,6 +640,7 @@ $('add').onclick = async () => {
 };
 
 $('due').value = new Date().toISOString().slice(0, 10);
+loadSubjects();
 load();
 setInterval(() => { if (!editing) load(); }, 5000);
 </script>

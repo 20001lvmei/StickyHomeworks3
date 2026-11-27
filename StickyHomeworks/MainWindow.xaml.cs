@@ -899,7 +899,7 @@ public partial class MainWindow : Window
             _webServer.Stop();
         }
 
-        _webServerAddress = _webServer.Start(ProfileService, SettingsService.Settings.WebServerPort);
+        _webServerAddress = _webServer.Start(ProfileService, SettingsService, SettingsService.Settings.WebServerPort);
         if (_webServerAddress == null)
         {
             ViewModel.SnackbarMessageQueue.Enqueue("网页版启动失败：端口可能被占用。");

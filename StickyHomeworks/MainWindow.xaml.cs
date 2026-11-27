@@ -369,6 +369,12 @@ public partial class MainWindow : Window
             return;
         }
 
+        if (SettingsService.Settings.IsAddHomeworkWebOnly)
+        {
+            ViewModel.SnackbarMessageQueue.Enqueue("已在设置中限制：只能通过网页版添加作业。");
+            return;
+        }
+
         ViewModel.IsUpdatingHomeworkSubject = true;
         OnHomeworkEditorUpdated?.Invoke(this ,EventArgs.Empty);
         var lastSubject = ViewModel.EditingHomework.Subject;

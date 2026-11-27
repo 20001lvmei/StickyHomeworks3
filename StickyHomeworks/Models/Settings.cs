@@ -243,6 +243,22 @@ public class Settings : ObservableRecipient
         }
     }
 
+    private bool _isAddHomeworkWebOnly;
+
+    /// <summary>
+    /// 只能在网页版添加作业：开启后桌面端的「布置作业」和回车新建都会被拦下。
+    /// </summary>
+    public bool IsAddHomeworkWebOnly
+    {
+        get => _isAddHomeworkWebOnly;
+        set
+        {
+            if (value == _isAddHomeworkWebOnly) return;
+            _isAddHomeworkWebOnly = value;
+            OnPropertyChanged();
+        }
+    }
+
     public string Title
     {
         get => _title;

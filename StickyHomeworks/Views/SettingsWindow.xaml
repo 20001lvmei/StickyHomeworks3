@@ -382,6 +382,14 @@
                                         </StackPanel>
                                     </ely:SettingsCard.Switcher>
                                 </ely:SettingsCard>
+                                <!-- 只能网页添加 -->
+                                <ely:SettingsCard IconGlyph="CellphoneArrowDown" Header="只能在网页端添加作业"
+                                                       Description="开启后桌面端的「+」和回车新建都会被禁用，只能从网页版添加。">
+                                    <ely:SettingsCard.Switcher>
+                                        <ToggleButton Style="{StaticResource MaterialDesignSwitchToggleButton}"
+                                                      IsChecked="{Binding Settings.IsAddHomeworkWebOnly, Mode=TwoWay}" />
+                                    </ely:SettingsCard.Switcher>
+                                </ely:SettingsCard>
                                 <Separator Margin="0 16 0 8"/>
                                 <ely:IconText Kind="PaletteOutline" Text="主题" Margin="0 0 0 8"/>
                                 <!-- 应用主题 -->

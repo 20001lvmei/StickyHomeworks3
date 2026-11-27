@@ -260,6 +260,21 @@ public static class RichTextBoxHelper
     }
 
     /// <summary>
+    /// 把纯文本包成一份最简的作业文档（网页版编辑用）。
+    /// </summary>
+    public static string CreateDocumentFromPlainText(string text)
+    {
+        var document = new FlowDocument();
+        var lines = (text ?? "").Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');
+        foreach (var line in lines)
+        {
+            document.Blocks.Add(new Paragraph(new Run(line)));
+        }
+
+        return XamlWriter.Save(document);
+    }
+
+    /// <summary>
     /// 取出作业内容中的纯文本（去掉 XAML 标签），用于判断内容是否为空。
     /// </summary>
     public static string GetPlainText(string? xaml)

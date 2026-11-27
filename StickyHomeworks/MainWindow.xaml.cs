@@ -285,6 +285,7 @@ public partial class MainWindow : Window
         };
         base.OnContentRendered(e);
         StartClassIslandLink();
+        ApplyWebServerSetting();
 
 #if DEBUG
         if (Environment.GetEnvironmentVariable("STICKYHOMEWORKS3_SELFTEST") == "1")
@@ -867,9 +868,58 @@ public partial class MainWindow : Window
 
     private readonly ClassIslandLinkService _classIslandLink = new();
 
+    private readonly WebServerService _webServer = new();
+
+    private string? _webServerAddress;
+
     private DispatcherTimer? _classIslandTimer;
 
     private ClassIslandTimeState _lastClassIslandState = ClassIslandTimeState.Unknown;
+
+    /// <summary>
+    /// 按设置启动/停止内置网页版。
+    /// </summary>
+    public void ApplyWebServerSetting()
+    {
+        if (!SettingsService.Settings.IsWebServerEnabled)
+        {
+            _webServer.Stop();
+            _webServerAddress = null;
+            return;
+        }
+
+        if (_webServer.IsRunning)
+        {
+            _webServer.Stop();
+        }
+
+        _webServerAddress = _webServer.Start(ProfileService, SettingsService.Settings.WebServerPort);
+        if (_webServerAddress == null)
+        {
+            ViewModel.SnackbarMessageQueue.Enqueue("网页版启动失败：端口可能被占用。");
+        }
+        else
+        {
+            ViewModel.SnackbarMessageQueue.Enqueue($"网页版已启动：http://127.0.0.1:{SettingsService.Settings.WebServerPort}/",
+                "打开", _ => OpenWebServerPage(), null, false, false, TimeSpan.FromSeconds(20));
+        }
+    }
+
+    private void OpenWebServerPage()
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = $"http://127.0.0.1:{SettingsService.Settings.WebServerPort}/",
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[Web] 打开浏览器失败：{ex.Message}");
+        }
+    }
 
     /// <summary>
     /// 按 ClassIsland 课表定时判断上课/课间，自动隐藏或显示窗口。

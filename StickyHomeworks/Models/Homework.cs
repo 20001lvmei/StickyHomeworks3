@@ -12,6 +12,22 @@ public class Homework : ObservableRecipient
     private DateTime _dueTime = DateTime.Today;
     private ObservableCollection<string> _tags = new();
     private bool _isArchiveExempt = false;
+    private Guid _id = Guid.NewGuid();
+
+    /// <summary>
+    /// 稳定标识，网页版/接口用它定位作业。
+    /// 旧数据里没有这个字段时会在加载时随机生成。
+    /// </summary>
+    public Guid Id
+    {
+        get => _id;
+        set
+        {
+            if (value == _id) return;
+            _id = value;
+            OnPropertyChanged();
+        }
+    }
 
     public string Content
     {

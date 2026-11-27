@@ -211,6 +211,38 @@ public class Settings : ObservableRecipient
         }
     }
 
+    private bool _isWebServerEnabled;
+    private int _webServerPort = 8787;
+
+    /// <summary>
+    /// 是否启用网页版（浏览器访问 127.0.0.1:端口 查看/编辑作业）。
+    /// </summary>
+    public bool IsWebServerEnabled
+    {
+        get => _isWebServerEnabled;
+        set
+        {
+            if (value == _isWebServerEnabled) return;
+            _isWebServerEnabled = value;
+            OnPropertyChanged();
+        }
+    }
+
+    /// <summary>
+    /// 网页版端口。
+    /// </summary>
+    public int WebServerPort
+    {
+        get => _webServerPort;
+        set
+        {
+            var port = value is < 1024 or > 65535 ? 8787 : value;
+            if (port == _webServerPort) return;
+            _webServerPort = port;
+            OnPropertyChanged();
+        }
+    }
+
     public string Title
     {
         get => _title;

@@ -340,6 +340,24 @@
                                     </ely:SettingsCard.Switcher>
                                 </ely:SettingsCard>
                                 <Separator Margin="0 16 0 8"/>
+                                <ely:IconText Kind="Web" Text="网页版" Margin="0 0 0 8"/>
+                                <!-- 网页版开关 -->
+                                <ely:SettingsCard IconGlyph="Web" Header="启用网页版"
+                                                       Description="用浏览器查看和修改作业，地址 http://127.0.0.1:端口/">
+                                    <ely:SettingsCard.Switcher>
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <TextBox Width="80" VerticalAlignment="Center"
+                                                     Text="{Binding Settings.WebServerPort, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                                     materialDesign:HintAssist.Hint="端口" />
+                                            <ToggleButton Style="{StaticResource MaterialDesignSwitchToggleButton}"
+                                                          Margin="10 0 0 0"
+                                                          IsChecked="{Binding Settings.IsWebServerEnabled, Mode=TwoWay}"
+                                                          Checked="ToggleWebServer_OnChanged"
+                                                          Unchecked="ToggleWebServer_OnChanged" />
+                                        </StackPanel>
+                                    </ely:SettingsCard.Switcher>
+                                </ely:SettingsCard>
+                                <Separator Margin="0 16 0 8"/>
                                 <ely:IconText Kind="LinkVariant" Text="ClassIsland 联动" Margin="0 0 0 8"/>
                                 <!-- 上课隐藏 / 下课显示 -->
                                 <ely:SettingsCard IconGlyph="EyeOutline" Header="上课隐藏、下课显示"

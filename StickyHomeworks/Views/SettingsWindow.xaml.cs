@@ -173,6 +173,12 @@ public partial class SettingsWindow : MyWindow
         AppEx.GetService<SettingsService>().SaveSettings();
     }
 
+    private void ToggleWebServer_OnChanged(object sender, RoutedEventArgs e)
+    {
+        AppEx.GetService<SettingsService>().SaveSettings();
+        AppEx.GetService<MainWindow>().ApplyWebServerSetting();
+    }
+
     private void ButtonPickClassIslandData_OnClick(object sender, RoutedEventArgs e)
     {
         var dialog = new Microsoft.Win32.OpenFolderDialog
